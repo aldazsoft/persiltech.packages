@@ -61,9 +61,11 @@
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
+  <!-- Referencias de proyecto, no de paquete: los tres viven en el mismo repositorio y un
+       cambio en los paquetes base tiene que verse aquí sin pasar por nuget.org. -->
   <ItemGroup>
-    <PackageReference Include="Persiltech.Email" />
-    <PackageReference Include="Persiltech.Membership" />
+    <ProjectReference Include="..\Persiltech.Email\Persiltech.Email.csproj" />
+    <ProjectReference Include="..\Persiltech.Membership\Persiltech.Membership.csproj" />
   </ItemGroup>
 
 </Project>

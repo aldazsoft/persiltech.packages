@@ -48,7 +48,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Persiltech.Localizer" />
+  </ItemGroup>
+
+  <!-- Referencia de proyecto, no de paquete: los dos viven en el mismo repositorio y un
+       cambio en el paquete base tiene que verse aquí sin pasar por nuget.org. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Persiltech.Localizer\Persiltech.Localizer.csproj" />
   </ItemGroup>
 
 </Project>

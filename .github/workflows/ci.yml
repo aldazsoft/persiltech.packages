@@ -1,0 +1,53 @@
+name: CI
+
+# Un monorepo, una solucion, una ejecucion: se compila y prueba todo junto para que un
+# cambio en un paquete base delate en el acto a los consumidores que rompe.
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'specs/**'
+      - 'assets/**'
+      - '**/*.md'
+      - 'LICENSE'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - 'specs/**'
+      - 'assets/**'
+      - '**/*.md'
+      - 'LICENSE'
+
+# El workflow solo lee el repositorio: no publica nada ni escribe en el.
+permissions:
+  contents: read
+
+# Un push nuevo cancela la ejecucion anterior de la misma rama o PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # setup-dotnet lee la version directamente del global.json: no hay que
+      # duplicarla aqui ni parsear el archivo a mano.
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Persiltech.Packages.slnx
+
+      # Directory.Build.props activa TreatWarningsAsErrors, asi que una advertencia
+      # de estilo o de analisis basta para dejar el build en rojo.
+      - name: Build
+        run: dotnet build Persiltech.Packages.slnx --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test Persiltech.Packages.slnx --no-build --configuration Release

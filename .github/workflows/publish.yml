@@ -1,0 +1,143 @@
+name: Publish
+
+# Una etiqueta por paquete, con el formato Persiltech.<Nombre>-v<Version>:
+#
+#     git tag Persiltech.UserServices-v0.1.5 && git push origin Persiltech.UserServices-v0.1.5
+#
+# En el monorepo conviven diez paquetes con versiones independientes, asi que un 'v0.1.5'
+# suelto seria ambiguo: la etiqueta tiene que decir cual se publica.
+#
+# La version publicada es la de <VersionPrefix> del .csproj, no la de la etiqueta: subela
+# en el proyecto antes de etiquetar. El paso de verificacion aborta si difieren.
+on:
+  push:
+    tags: [ '*-v*' ]
+  workflow_dispatch:
+    inputs:
+      package_id:
+        description: 'PackageId a publicar (Ej. Persiltech.UserServices)'
+        required: true
+        type: string
+
+# Publicar solo necesita leer el repositorio: la credencial de nuget.org viaja aparte,
+# en el secreto NUGET_AUTH_TOKEN.
+permissions:
+  contents: read
+
+# Dos etiquetas seguidas no deben publicar a la vez, pero tampoco cancelarse: una
+# publicacion a medias no se puede reintentar limpiamente.
+#
+# Esto serializa las ejecuciones pero no garantiza su orden. Si publicas un paquete base
+# y un consumidor a la vez y el consumidor corre primero, 'Verify publish readiness'
+# aborta sin publicar nada; relanza esa ejecucion cuando el base ya este en nuget.org.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+env:
+  NUGET_SOURCE_URL: "https://api.nuget.org/v3/index.json"
+
+jobs:
+  publish:
+    name: Pack & Push
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # El nombre de la carpeta coincide con el <PackageId> en los diez proyectos, asi que
+      # la ruta del .csproj sale del identificador sin tabla de mapeo que mantener. El
+      # patron acotado rechaza de paso cualquier intento de salirse de src/ con '..'.
+      - name: Resolve package
+        id: package
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            package_id="${{ inputs.package_id }}"
+            tag_version=""
+          else
+            package_id="${GITHUB_REF_NAME%-v*}"
+            tag_version="${GITHUB_REF_NAME##*-v}"
+          fi
+
+          if ! printf '%s' "$package_id" | grep -qE '^Persiltech\.[A-Za-z0-9.]+$'; then
+            echo "::error::'$package_id' no es un PackageId valido. Etiqueta con el formato Persiltech.<Nombre>-v<Version>."
+            exit 1
+          fi
+
+          project="src/$package_id/$package_id.csproj"
+          if [ ! -f "$project" ]; then
+            echo "::error::No existe '$project'. Revisa el identificador de la etiqueta."
+            exit 1
+          fi
+
+          {
+            echo "package_id=$package_id"
+            echo "tag_version=$tag_version"
+            echo "project=$project"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Paquete: $package_id"
+          echo "Proyecto: $project"
+
+      # La etiqueta y <VersionPrefix> son dos caras de la misma verdad. Si se separan,
+      # 'dotnet pack' genera una version ya publicada y el push la descarta sin fallar por
+      # --skip-duplicate: el workflow queda en verde y nada llega a nuget.org. Mejor
+      # abortar aqui, antes de compilar.
+      - name: Verify tag matches VersionPrefix
+        if: github.event_name == 'push'
+        run: |
+          project="${{ steps.package.outputs.project }}"
+          tag_version="${{ steps.package.outputs.tag_version }}"
+          project_version=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' "$project")
+
+          if [ -z "$project_version" ]; then
+            echo "::error::'$project' no declara <VersionPrefix>."
+            exit 1
+          fi
+
+          if [ "$tag_version" != "$project_version" ]; then
+            echo "::error::La etiqueta $GITHUB_REF_NAME declara $tag_version pero <VersionPrefix> es $project_version. Sube la version en el .csproj y vuelve a etiquetar."
+            exit 1
+          fi
+
+          echo "Etiqueta $GITHUB_REF_NAME == <VersionPrefix> $project_version"
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Persiltech.Packages.slnx
+
+      # Se compila y se prueba la solucion entera, no solo el proyecto que se publica: con
+      # <ProjectReference> un cambio en un paquete base llega a sus consumidores en el
+      # acto, y si algo rompe tiene que salir aqui y no despues del push.
+      - name: Build
+        run: dotnet build Persiltech.Packages.slnx --no-restore --configuration Release
+
+      # Las pruebas son la condicion para publicar.
+      - name: Test
+        run: dotnet test Persiltech.Packages.slnx --no-build --configuration Release
+
+      - name: Pack
+        run: dotnet pack "${{ steps.package.outputs.project }}" --no-build --configuration Release --output ${{ github.workspace }}/artifacts
+
+      # Con <ProjectReference> el suelo de cada dependencia lo calcula 'dotnet pack' leyendo
+      # el <VersionPrefix> del proyecto vecino en disco, sin consultar nuget.org. Este paso
+      # comprueba que ese suelo ya exista alli: si no, el consumidor fallaria al restaurar
+      # con NU1101 o NU1102. Tambien aborta si la version que se va a publicar ya esta
+      # publicada con otro contenido, caso que --skip-duplicate se tragaria en silencio.
+      - name: Verify publish readiness
+        shell: pwsh
+        run: ./eng/Test-PublishReadiness.ps1 -PackageDirectory "${{ github.workspace }}/artifacts"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.package_id }}-nupkg
+          path: ${{ github.workspace }}/artifacts/*
+
+      # --skip-duplicate evita que reintentar el workflow falle por versiones ya subidas.
+      # El .snupkg de simbolos viaja solo: el cliente lo detecta junto al .nupkg.
+      - name: Push
+        run: dotnet nuget push "${{ github.workspace }}/artifacts/*.nupkg" --api-key ${{ secrets.NUGET_AUTH_TOKEN }} --source ${{ env.NUGET_SOURCE_URL }} --skip-duplicate

@@ -47,8 +47,10 @@
     <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
+  <!-- Referencia de proyecto, no de paquete: los dos viven en el mismo repositorio y un
+       cambio en el paquete base tiene que verse aquí sin pasar por nuget.org. -->
   <ItemGroup>
-    <PackageReference Include="Persiltech.Localizer" />
+    <ProjectReference Include="..\Persiltech.Localizer\Persiltech.Localizer.csproj" />
   </ItemGroup>
 
 </Project>

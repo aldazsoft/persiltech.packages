@@ -59,17 +59,24 @@ El registro es idempotente: no duplica el servicio si ya estaba registrado.
 # Dependencias publicadas
 
 Versiones que viajan al `.nuspec` y que el consumidor hereda como mínimo al instalar el
-paquete. Se declara la **más baja que ya expone el contrato implementado**, no la más
-reciente: NuGet la trata como suelo y no como fijación, así que subirla sin motivo obliga a
-actualizar a consumidores a los que la anterior les servía. Compilar contra ese mínimo es
-además lo que impide usar por descuido API que solo existe en versiones posteriores.
+paquete. NuGet las trata como suelo, no como fijación.
 
-| Paquete                                | Versión mínima | Por qué esa                                                                                                                                                    |
-| -------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Persiltech.UserServices.Abstractions` | 0.1.0          | Primera publicada, y ya expone `IUserService` con los tres miembros que implementa el adaptador. El contrato no ha cambiado en ninguna versión posterior hasta 0.1.11. |
+| Paquete                                | Versión mínima            | De dónde sale                                                                                             |
+| -------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Persiltech.UserServices.Abstractions` | La del proyecto vecino | `dotnet pack` la toma del `<VersionPrefix>` de `Persiltech.UserServices.Abstractions.csproj` al empaquetar. |
 
-Cada versión de esta tabla se propaga al `<PackageVersion>` correspondiente de
-`Directory.Packages.props`, que es donde Central Package Management la declara.
+Esa versión **no se declara a mano en ningún sitio**: el `<ProjectReference>` a
+`Persiltech.UserServices.Abstractions` es lo único escrito, y es `dotnet pack` quien lo
+traduce a dependencia NuGet con la versión que el proyecto referenciado tenga en ese
+momento. La contrapartida es que el suelo declarado sube con cada versión del contrato,
+aunque el adaptador siguiera compilando contra una anterior; a cambio, implementación y
+contrato no pueden desincronizarse dentro del monorepo. Si algún día conviniera declarar un
+suelo más bajo que el del proyecto vecino, hay que volver a `<PackageReference>` con
+Central Package Management y aceptar el mantenimiento manual de esa versión.
+
+Esto obliga a **publicar `Persiltech.UserServices.Abstractions` antes que este paquete**:
+el `.nuspec` apunta a la versión que el contrato tenga al empaquetar, y esa versión debe
+existir ya en nuget.org.
 
 Las dependencias que no salen del repositorio —el arnés de pruebas y las herramientas de
 compilación— no se declaran aquí: no llegan al `.nuspec`, el consumidor no las ve, y su
@@ -80,10 +87,13 @@ el *Historial de versiones* del README.
 
 # Decisiones de diseño
 
-- El contrato `IUserService` **no se redefine aquí**: llega del paquete
-  `Persiltech.UserServices.Abstractions` publicado en nuget.org, referenciado por NuGet
-  vía Central Package Management. Nunca por `ProjectReference`. La versión mínima con la
-  que se compila y que se declara al consumidor está en *Dependencias publicadas*.
+- El contrato `IUserService` **no se redefine aquí**: llega de
+  `Persiltech.UserServices.Abstractions`, que vive en este mismo monorepo y se referencia
+  con `<ProjectReference>`, no con `<PackageReference>`. Dentro del repositorio el proyecto
+  vecino es la fuente de verdad, no la versión publicada en nuget.org: un cambio en el
+  contrato tiene que romper la compilación de este adaptador en el acto, sin pasar por un
+  ciclo de publicación. El consumidor no nota la diferencia — el `.nupkg` declara la
+  dependencia igual —; los detalles están en *Dependencias publicadas*.
 - La dependencia de ASP.NET Core se declara con
   `<FrameworkReference Include="Microsoft.AspNetCore.App" />`, no con un
   `<PackageReference>` a `Microsoft.AspNetCore.Http.Abstractions`. Ese paquete es la vía
