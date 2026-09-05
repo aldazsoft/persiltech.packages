@@ -47,8 +47,10 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- Referencia de proyecto, no de paquete: los dos viven en el mismo repositorio y un
+       cambio en el contrato tiene que verse aquí sin pasar por nuget.org. -->
   <ItemGroup>
-    <PackageReference Include="Persiltech.UserServices.Abstractions" />
+    <ProjectReference Include="..\Persiltech.UserServices.Abstractions\Persiltech.UserServices.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

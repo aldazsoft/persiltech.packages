@@ -4,15 +4,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
-  <!-- Dependencias entre paquetes de la casa. Desaparecen en la Fase 3, cuando pasen a
-       <ProjectReference>: dentro del monorepo el proyecto vecino es la fuente de verdad,
-       no la versión publicada en nuget.org. -->
-  <ItemGroup>
-    <PackageVersion Include="Persiltech.Email" Version="0.1.0" />
-    <PackageVersion Include="Persiltech.Localizer" Version="1.0.1" />
-    <PackageVersion Include="Persiltech.Membership" Version="0.5.0" />
-    <PackageVersion Include="Persiltech.UserServices.Abstractions" Version="0.1.0" />
-  </ItemGroup>
+  <!-- Aquí no se declara ningún paquete de la casa: entre paquetes del monorepo la
+       dependencia va por <ProjectReference>, y es 'dotnet pack' quien la traduce a
+       dependencia NuGet tomando la versión del proyecto referenciado. -->
 
   <ItemGroup>
     <PackageVersion Include="MailKit" Version="4.17.0" />
