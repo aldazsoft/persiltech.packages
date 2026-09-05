@@ -4,7 +4,7 @@
     <PackageId>Persiltech.UserServices</PackageId>
     <Title>Persiltech.UserServices</Title>
     <Description>Implementación para ASP.NET Core de IUserService, el Output Port que define Persiltech.UserServices.Abstractions, que resuelve la identidad y el estado de autenticación del usuario actual a partir de HttpContext.User.</Description>
-    <VersionPrefix>0.1.4</VersionPrefix>
+    <VersionPrefix>0.1.5</VersionPrefix>
     <PackageTags>dotnet;csharp;aspnetcore;authentication;identity;httpcontext;clean-architecture</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
