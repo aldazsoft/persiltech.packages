@@ -1,0 +1,85 @@
+# Normaliza los finales de línea: git almacena LF en el repositorio y entrega
+# al working copy lo que indique cada regla de abajo.
+* text=auto
+
+# Código y proyectos .NET: CRLF en disco (Windows / Visual Studio)
+*.cs        text diff=csharp eol=crlf
+*.csx       text diff=csharp eol=crlf
+*.csproj    text eol=crlf
+*.sln       text eol=crlf
+*.slnx      text eol=crlf
+*.props     text eol=crlf
+*.targets   text eol=crlf
+*.resx      text eol=crlf
+*.config    text eol=crlf
+*.razor     text diff=html eol=crlf
+*.cshtml    text diff=html eol=crlf
+*.sql       text eol=crlf
+*.http      text eol=crlf
+*.ps1       text eol=crlf
+*.psm1      text eol=crlf
+*.psd1      text eol=crlf
+
+# Scripts de lote: el CRLF no es cosmético, los .bat/.cmd lo requieren para
+# interpretar correctamente etiquetas y saltos de línea.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# Formatos que esperan LF, incluso en Windows
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sh        text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+.gitattributes text eol=lf
+.gitignore  text eol=lf
+.editorconfig text eol=lf
+
+# Assets web: LF de forma determinista. El repositorio ya los almacena así por
+# "* text=auto"; declararlo evita que el working copy dependa de core.autocrlf.
+*.js        text eol=lf
+*.css       text eol=lf
+*.scss      text eol=lf
+*.less      text eol=lf
+*.svg       text eol=lf
+*.html      text eol=lf
+*.map       text eol=lf
+
+# Texto sin final de línea forzado: git normaliza a LF en el repositorio y el
+# working copy queda según la configuración local (core.autocrlf / core.eol).
+*.txt       text
+*.xml       text
+
+# Binarios: nunca normalizar ni intentar diff textual
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.webp      binary
+*.ico       binary
+*.pdf       binary
+*.epub      binary
+*.zip       binary
+*.gz        binary
+*.7z        binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.otf       binary
+*.eot       binary
+*.wasm      binary
+*.db        binary
+*.mdf       binary
+*.ldf       binary
+*.nupkg     binary
+*.snupkg    binary
+*.snk       binary
+*.pfx       binary
+*.p12       binary
+*.dll       binary
+*.exe       binary
+*.pdb       binary
+
+# Las migraciones las genera 'dotnet ef': GitHub las colapsa en los diffs de los
+# pull requests y las excluye de las estadísticas de lenguaje del repositorio.
+**/Migrations/** linguist-generated=true

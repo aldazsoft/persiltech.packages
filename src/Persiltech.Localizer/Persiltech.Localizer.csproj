@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Persiltech.Localizer</PackageId>
+    <Title>Persiltech.Localizer</Title>
+    <Description>A simple tool for localizing .NET projects: strongly typed access to resource files, resolved from the current UI culture.</Description>
+    <VersionPrefix>1.0.2</VersionPrefix>
+    <PackageTags>dotnet;csharp;localization;i18n;resources;resx</PackageTags>
+    <Authors>Edinson Aldaz</Authors>
+    <Company>Persiltech</Company>
+    <Product>Persiltech.Localizer</Product>
+    <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://aldazsoft.github.io/Localizer/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v1.0.2
+      - The project website now points to the portfolio page, where the package is documented
+      - The real licence text ships inside the .nupkg instead of an SPDX expression
+      - The public surface is documented with XML comments, so IntelliSense works for consumers
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- El código fuente es privado. Sin metadata de repositorio en el .nuspec, que en
+       nuget.org sería un enlace muerto, y sin SourceLink, que el SDK activa por defecto
+       desde .NET 8 y apuntaría el depurador del consumidor a una URL sin acceso público. -->
+  <PropertyGroup>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
+  <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Localization" />
+  </ItemGroup>
+
+</Project>

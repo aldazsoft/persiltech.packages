@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Persiltech.Email</PackageId>
+    <Title>Persiltech.Email</Title>
+    <Description>Envío de correo electrónico por SMTP en .NET: el contrato IEmailSender y su implementación con MailKit, con configuración por Options y registro en la inyección de dependencias.</Description>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <PackageTags>dotnet;csharp;email;smtp;mailkit</PackageTags>
+    <Authors>Edinson Aldaz</Authors>
+    <Company>Persiltech</Company>
+    <Product>Persiltech.Email</Product>
+    <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://aldazsoft.github.io/Email/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v0.1.0
+      - Primera versión: el contrato IEmailSender y su implementación SMTP con MailKit
+      - Las opciones se validan al arrancar con IValidateOptions, acumulando todos los fallos
+      - Remitente y destinatario se analizan con el mismo criterio, que rechaza direcciones sin dominio
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- El código fuente es privado. Sin metadata de repositorio en el .nuspec, que en
+       nuget.org sería un enlace muerto, y sin SourceLink, que el SDK activa por defecto
+       desde .NET 8 y apuntaría el depurador del consumidor a una URL sin acceso público. -->
+  <PropertyGroup>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
+  <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="../../assets/icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- DynamicProxyGenAssembly2 es el ensamblado donde Castle DynamicProxy genera los dobles
+       de NSubstitute: sin él no puede sustituir las costuras internas del paquete. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Persiltech.Email.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MailKit" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+
+</Project>

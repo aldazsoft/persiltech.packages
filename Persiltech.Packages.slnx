@@ -1,0 +1,41 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path=".config/dotnet-tools.json" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Persiltech.Blazor.JSInterop/Persiltech.Blazor.JSInterop.csproj" />
+    <Project Path="src/Persiltech.DomainValidation/Persiltech.DomainValidation.csproj" />
+    <Project Path="src/Persiltech.Email/Persiltech.Email.csproj" />
+    <Project Path="src/Persiltech.Localizer/Persiltech.Localizer.csproj" />
+    <Project Path="src/Persiltech.Membership/Persiltech.Membership.csproj" />
+    <Project Path="src/Persiltech.Membership.Email/Persiltech.Membership.Email.csproj" />
+    <Project Path="src/Persiltech.Membership.OAuth/Persiltech.Membership.OAuth.csproj" />
+    <Project Path="src/Persiltech.Results/Persiltech.Results.csproj" />
+    <Project Path="src/Persiltech.UserServices.Abstractions/Persiltech.UserServices.Abstractions.csproj" />
+    <Project Path="src/Persiltech.UserServices/Persiltech.UserServices.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Persiltech.Blazor.JSInterop.Tests/Persiltech.Blazor.JSInterop.Tests.csproj" />
+    <Project Path="tests/Persiltech.DomainValidation.Tests/Persiltech.DomainValidation.Tests.csproj" />
+    <Project Path="tests/Persiltech.Email.Tests/Persiltech.Email.Tests.csproj" />
+    <Project Path="tests/Persiltech.Membership.Email.Tests/Persiltech.Membership.Email.Tests.csproj" />
+    <Project Path="tests/Persiltech.Membership.Tests/Persiltech.Membership.Tests.csproj" />
+    <Project Path="tests/Persiltech.Results.Tests/Persiltech.Results.Tests.csproj" />
+    <Project Path="tests/Persiltech.UserServices.Tests/Persiltech.UserServices.Tests.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Persiltech.Blazor.JSInterop.Sample/Persiltech.Blazor.JSInterop.Sample.csproj" />
+    <Project Path="samples/Persiltech.Email.Sample/Persiltech.Email.Sample.csproj" />
+    <Project Path="samples/Persiltech.Localizer.Console.Sample/Persiltech.Localizer.Console.Sample.csproj" />
+    <Project Path="samples/Persiltech.Localizer.WebApi.Sample/Persiltech.Localizer.WebApi.Sample.csproj" />
+    <Project Path="samples/Persiltech.Membership.Email.Sample/Persiltech.Membership.Email.Sample.csproj" />
+    <Project Path="samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj" />
+  </Folder>
+</Solution>

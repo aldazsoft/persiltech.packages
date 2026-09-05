@@ -1,0 +1,10 @@
+Hola, {{FirstName}}:
+
+Ya casi está. Confirma que {{Email}} es tu correo para terminar de activar tu cuenta en
+{{BrandName}}:
+
+{{ActionUrl}}
+
+--
+Este es un mensaje automático de {{BrandName}}. Si no esperabas recibirlo, puedes ignorarlo.
+{{SupportEmail}}

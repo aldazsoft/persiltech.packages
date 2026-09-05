@@ -1,0 +1,16 @@
+global using Microsoft.AspNetCore;
+global using Microsoft.AspNetCore.Authentication;
+global using Microsoft.AspNetCore.Authentication.Cookies;
+global using Microsoft.AspNetCore.Builder;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.AspNetCore.Http.Extensions;
+global using Microsoft.AspNetCore.Identity;
+global using Microsoft.AspNetCore.Routing;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Extensions.DependencyInjection;
+global using OpenIddict.Abstractions;
+global using OpenIddict.Server.AspNetCore;
+global using Persiltech.Membership;
+global using System.ComponentModel.DataAnnotations;
+global using System.Security.Claims;
+global using static OpenIddict.Abstractions.OpenIddictConstants;

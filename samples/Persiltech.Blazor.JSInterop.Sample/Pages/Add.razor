@@ -1,0 +1,20 @@
+﻿@page "/add"
+
+<div>
+    <h5>Suma de dos números</h5>
+</div>
+<div>
+    <label class="form-label">A:</label>
+    <input type="text" @bind=FirstAddend />
+</div>
+<div>
+    <label class="form-label">B:</label>
+    <input type="text" @bind=SecondAddend />
+</div>
+<button class="btn btn-primary mt-2" @onclick=Process>
+    Add
+</button>
+
+<div class="mt-2">
+    @(new MarkupString(Message))
+</div>

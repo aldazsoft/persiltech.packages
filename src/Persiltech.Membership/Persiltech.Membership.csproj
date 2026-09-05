@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Persiltech.Membership</PackageId>
+    <Title>Persiltech.Membership</Title>
+    <Description>Sistema de membresía reutilizable para aplicaciones ASP.NET Core: registro y autenticación de usuarios sobre ASP.NET Core Identity, con endpoints de Minimal API que el consumidor monta en la ruta que elija y emisión de un JSON Web Token firmado con HMAC-SHA256.</Description>
+    <VersionPrefix>0.5.0</VersionPrefix>
+    <PackageTags>dotnet;csharp;aspnetcore;identity;authentication;jwt;minimal-api;entity-framework-core</PackageTags>
+    <Authors>Edinson Aldaz</Authors>
+    <Company>Persiltech</Company>
+    <Product>Persiltech.Membership</Product>
+    <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://aldazsoft.github.io/Membership/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v0.5.0
+      - Primera publicación en nuget.org; las versiones 0.1.0 a 0.4.0 fueron internas
+      - Registro y autenticación sobre ASP.NET Core Identity, con emisión de JWT firmado con HMAC-SHA256
+      - Endpoints de Minimal API para cuenta, roles, usuarios, contraseña, correo, teléfono, perfil y doble factor
+      - Los avisos por correo y SMS salen por puertos que implementa el consumidor
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- El código fuente es privado. Sin metadata de repositorio en el .nuspec, que en
+       nuget.org sería un enlace muerto, y sin SourceLink, que el SDK activa por defecto
+       desde .NET 8 y apuntaría el depurador del consumidor a una URL sin acceso público. -->
+  <PropertyGroup>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
+  <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="../../assets/icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- El framework compartido trae Identity, el enrutamiento y la autorización; los
+       paquetes independientes van por Central Package Management. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Persiltech.Membership.Tests" />
+  </ItemGroup>
+
+</Project>

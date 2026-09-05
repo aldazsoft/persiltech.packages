@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <PackageId>Persiltech.Blazor.JSInterop</PackageId>
+    <Title>Persiltech.Blazor.JSInterop</Title>
+    <Description>Base classes for Blazor components and services that load JavaScript modules and WebAssembly modules through JSInterop, disposing of them with the component.</Description>
+    <VersionPrefix>1.1.1</VersionPrefix>
+    <PackageTags>dotnet;csharp;blazor;jsinterop;webassembly;wasm</PackageTags>
+    <Authors>Edinson Aldaz</Authors>
+    <Company>Persiltech</Company>
+    <Product>Persiltech.Blazor.JSInterop</Product>
+    <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://aldazsoft.github.io/Blazor.JSInterop/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v1.1.1
+      - Disposing the service while its first call is still importing no longer leaks the module reference
+      - The internal import gate is no longer disposed, so a call in flight does not fail on the way out
+      - A call that outlives its service is logged as Debug, not as an error
+      - The constructors document the exceptions they throw
+      - Corrects the README examples, which were missing a using directive and did not compile
+
+      v1.1.0
+      - Fixes the packaged wasmModuleLoader.js, which shipped truncated and could not be imported
+      - A failed module import is no longer cached: the next call retries instead of leaving the service dead
+      - Failures during the import are logged and swallowed, as the contract always promised
+      - DisposeAsync tolerates a torn-down circuit (JSDisconnectedException)
+      - One structured log entry per failure, carrying the exception and the method name
+      - WasmLoaderServiceBase is abstract, derives from JSLoaderServiceBase and takes a plain ILogger
+      - The dependency narrows to Microsoft.JSInterop and Microsoft.Extensions.Logging.Abstractions
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- El código fuente es privado. Sin metadata de repositorio en el .nuspec, que en
+       nuget.org sería un enlace muerto, y sin SourceLink, que el SDK activa por defecto
+       desde .NET 8 y apuntaría el depurador del consumidor a una URL sin acceso público. -->
+  <PropertyGroup>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
+  <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- El paquete solo necesita IJSRuntime e ILogger. Aquí NO se usa
+       <FrameworkReference Include="Microsoft.AspNetCore.App" />, al contrario que en el resto
+       de librerías de la casa: una Razor Class Library que lo declare rompe a las aplicaciones
+       Blazor WebAssembly, que no referencian ese framework compartido. El SDK sigue siendo
+       Microsoft.NET.Sdk.Razor porque es lo que publica wwwroot/ como static web asset. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.JSInterop" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+</Project>

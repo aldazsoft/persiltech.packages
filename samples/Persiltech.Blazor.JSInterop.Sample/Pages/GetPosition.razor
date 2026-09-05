@@ -1,0 +1,17 @@
+﻿@page "/get-position"
+@inject GeolocationService Geolocation
+
+<button class="btn btn-primary mb-2" @onclick=ShowPosition>Show my position</button>
+<textarea class="form-control" rows="3" disabled @bind=Message>
+</textarea>
+
+@code {
+    private string Message = string.Empty;
+
+    private async Task ShowPosition()
+    {
+        var coordinates = await Geolocation.GetPosition();
+
+        Message = $"Latitude: {coordinates.Latitude}, Longitude: {coordinates.Longitude}";
+    }
+}

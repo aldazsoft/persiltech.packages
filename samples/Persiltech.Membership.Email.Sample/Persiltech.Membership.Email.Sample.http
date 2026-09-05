@@ -1,0 +1,42 @@
+@HostAddress = http://localhost:5195
+
+### Los tres avisos salen por el servidor SMTP de appsettings.Development.json.
+### Necesitan un relay local escuchando en el 1025 (Papercut, MailHog): sin él, la petición
+### falla al conectar.
+
+### Confirmación del correo de una cuenta recién registrada.
+POST {{HostAddress}}/notifications/email-confirmation
+Content-Type: application/json
+
+{
+  "userId": "42",
+  "email": "juan.perez@example.com",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "token": "CfDJ8Testigo+De/Ejemplo=="
+}
+
+### Reinicio de una contraseña olvidada.
+POST {{HostAddress}}/notifications/password-reset
+Content-Type: application/json
+
+{
+  "userId": "42",
+  "email": "juan.perez@example.com",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "token": "CfDJ8Testigo+De/Ejemplo=="
+}
+
+### Confirmación de un cambio de correo. Aquí "email" es el correo NUEVO, que es a la vez
+### el destinatario del aviso.
+POST {{HostAddress}}/notifications/email-change
+Content-Type: application/json
+
+{
+  "userId": "42",
+  "email": "juan.nuevo@example.com",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "token": "CfDJ8Testigo+De/Ejemplo=="
+}

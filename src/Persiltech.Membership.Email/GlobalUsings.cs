@@ -1,0 +1,13 @@
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.DependencyInjection.Extensions;
+global using Microsoft.Extensions.Options;
+global using Persiltech.Email;
+global using Persiltech.Membership.Email.Internal;
+global using Persiltech.Membership.Notifications;
+global using System.Collections.Concurrent;
+global using System.Globalization;
+global using System.Net.Mail;
+global using System.Reflection;
+global using System.Text.Encodings.Web;
+global using System.Text.RegularExpressions;
+global using System.Text.Unicode;

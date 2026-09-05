@@ -1,0 +1,162 @@
+# Convenciones de Persiltech.Packages
+# https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yml,yaml}]
+indent_size = 2
+end_of_line = lf
+
+[*.{json,md}]
+indent_size = 2
+end_of_line = lf
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Estos archivos los entrega git en LF (ver .gitattributes). Sin esta sección
+# heredarían el CRLF de [*], el editor los reescribiría al guardarlos y git los
+# renormalizaría al commitear, dejando un archivo "modificado" fantasma. En un
+# .sh el CRLF además rompe el shebang en Linux ('bad interpreter: /bin/bash^M').
+[*.sh]
+end_of_line = lf
+
+[{.gitattributes,.gitignore,.editorconfig}]
+end_of_line = lf
+
+[*.{csproj,props,targets,slnx}]
+indent_size = 2
+
+[*.cs]
+# Declarado explícitamente aunque [*] ya fije 4: con IDE0055 elevado a warning y
+# TreatWarningsAsErrors, la indentación de los .cs rompe el build, y no conviene que
+# esa regla dependa de heredar el valor de una sección genérica.
+indent_size = 4
+
+# Las severidades de dotnet_naming_rule solo las respeta el IDE. Para que las
+# violaciones de nomenclatura también salgan al compilar hay que declarar el
+# diagnóstico.
+dotnet_diagnostic.IDE1006.severity = warning
+
+# CA2016 avisa cuando hay un CancellationToken en ámbito y no se propaga a una
+# llamada que acepta uno. Viene en severidad informativa, invisible al compilar;
+# elevarla a warning hace que el build vigile la propagación del token de extremo
+# a extremo, en lugar de dejarla a la revisión de código.
+dotnet_diagnostic.CA2016.severity = warning
+
+# La convención de que el namespace refleje la ruta de directorios la comprueba
+# IDE0130, que viene desactivado: sin esta línea la regla depende de que quien
+# escriba el archivo se acuerde.
+dotnet_style_namespace_match_folder = true
+dotnet_diagnostic.IDE0130.severity = warning
+
+# IDE0055 lleva el formato al build: es lo que convierte 'dotnet format' en algo
+# verificable en CI en lugar de opcional.
+dotnet_diagnostic.IDE0055.severity = warning
+
+#### Organización de using ####
+# Los using individuales no se usan en esta solución: cada proyecto declara sus
+# namespaces externos en su GlobalUsings.cs.
+
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:suggestion
+
+#### Preferencias de lenguaje ####
+
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+csharp_prefer_braces = when_multiline:suggestion
+csharp_style_prefer_primary_constructors = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_throw_expression = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+dotnet_style_readonly_field = true:suggestion
+
+# 'this.' explícito no se usa en estos repositorios
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+#### Reglas de nomenclatura ####
+# El orden importa: gana la primera regla cuyo símbolo coincida.
+
+# Estilos
+dotnet_naming_style.camel_case.capitalization = camel_case
+
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+dotnet_naming_style.pascal_case_con_prefijo_i.capitalization = pascal_case
+dotnet_naming_style.pascal_case_con_prefijo_i.required_prefix = I
+
+dotnet_naming_style.pascal_case_con_prefijo_t.capitalization = pascal_case
+dotnet_naming_style.pascal_case_con_prefijo_t.required_prefix = T
+
+# Símbolos
+dotnet_naming_symbols.locales_y_parametros.applicable_kinds = local,parameter
+dotnet_naming_symbols.locales_y_parametros.applicable_accessibilities = *
+
+dotnet_naming_symbols.funciones_locales.applicable_kinds = local_function
+dotnet_naming_symbols.funciones_locales.applicable_accessibilities = *
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+
+dotnet_naming_symbols.parametros_de_tipo.applicable_kinds = type_parameter
+dotnet_naming_symbols.parametros_de_tipo.applicable_accessibilities = *
+
+dotnet_naming_symbols.miembros_y_tipos.applicable_kinds = namespace,class,struct,enum,delegate,event,property,method,field
+dotnet_naming_symbols.miembros_y_tipos.applicable_accessibilities = *
+
+# Reglas
+# 1. Locales y parámetros en camelCase.
+dotnet_naming_rule.locales_y_parametros_en_camel_case.symbols = locales_y_parametros
+dotnet_naming_rule.locales_y_parametros_en_camel_case.style = camel_case
+dotnet_naming_rule.locales_y_parametros_en_camel_case.severity = warning
+
+# 2. Las funciones locales sí van en PascalCase.
+dotnet_naming_rule.funciones_locales_en_pascal_case.symbols = funciones_locales
+dotnet_naming_rule.funciones_locales_en_pascal_case.style = pascal_case
+dotnet_naming_rule.funciones_locales_en_pascal_case.severity = warning
+
+# 3. Interfaces con prefijo I.
+dotnet_naming_rule.interfaces_con_prefijo_i.symbols = interfaces
+dotnet_naming_rule.interfaces_con_prefijo_i.style = pascal_case_con_prefijo_i
+dotnet_naming_rule.interfaces_con_prefijo_i.severity = warning
+
+# 4. Parámetros de tipo con prefijo T (TProperty, TElement).
+dotnet_naming_rule.parametros_de_tipo_con_prefijo_t.symbols = parametros_de_tipo
+dotnet_naming_rule.parametros_de_tipo_con_prefijo_t.style = pascal_case_con_prefijo_t
+dotnet_naming_rule.parametros_de_tipo_con_prefijo_t.severity = warning
+
+# 5. Todo lo demás, incluidos los campos privados, en PascalCase.
+#    Es deliberado: estos repositorios usan PascalCase para campos, no _camelCase.
+dotnet_naming_rule.miembros_y_tipos_en_pascal_case.symbols = miembros_y_tipos
+dotnet_naming_rule.miembros_y_tipos_en_pascal_case.style = pascal_case
+dotnet_naming_rule.miembros_y_tipos_en_pascal_case.severity = warning
+
+# Las migraciones las genera 'dotnet ef' y no se editan a mano, así que las reglas
+# de estilo no se les aplican: con EnforceCodeStyleInBuild activo, romperían el build
+# por infracciones que no se pueden corregir en el origen. El doble asterisco final no es
+# cosmético: con dos DbContext, 'dotnet ef' anida las migraciones de cada uno en su propio
+# subdirectorio, y un patrón Migrations/*.cs dejaría fuera todo lo que no cuelgue directo.
+#
+# Este bloque va al final a propósito. Una sección de .editorconfig se extiende hasta la
+# siguiente cabecera, así que cualquier regla declarada debajo quedaría restringida a
+# Migrations/ y dejaría de aplicarse al resto de la solución.
+[**/Migrations/**.cs]
+generated_code = true

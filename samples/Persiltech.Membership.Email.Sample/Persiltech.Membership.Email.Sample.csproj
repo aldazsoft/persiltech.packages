@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- El consumidor real referencia el paquete por NuGet; aquí se usa el proyecto
+       para verificar lo que está sin publicar. -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/Persiltech.Membership.Email/Persiltech.Membership.Email.csproj" />
+  </ItemGroup>
+
+</Project>

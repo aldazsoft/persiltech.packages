@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- El consumidor real referencia el paquete por NuGet; aquí se usa el proyecto
+       para verificar lo que está sin publicar. -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/Persiltech.Membership/Persiltech.Membership.csproj" />
+    <ProjectReference Include="../../src/Persiltech.Membership.OAuth/Persiltech.Membership.OAuth.csproj" />
+  </ItemGroup>
+
+  <!-- Lo que el paquete deja en manos del consumidor: el proveedor de Entity Framework
+       Core, el esquema con el que se validan los tokens que el paquete emite, y la
+       herramienta de diseño con la que se generan las migraciones. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+
+</Project>

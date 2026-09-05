@@ -1,0 +1,261 @@
+@HostAddress = https://localhost:7082
+
+### Registrar una cuenta.
+POST {{HostAddress}}/user/register
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "Passw0rd!",
+  "firstName": "Juan",
+  "lastName": "Pérez"
+}
+
+### Autenticar y quedarse con el token.
+# @name login
+POST {{HostAddress}}/user/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Passw0rd!"
+}
+
+### Consumir el token contra una ruta protegida del consumidor.
+GET {{HostAddress}}/user/me
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Credenciales inválidas: 400 con el error en la clave vacía.
+POST {{HostAddress}}/user/login
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "otra-cosa"
+}
+
+### Registro inválido: 400 con las claves en camelCase.
+POST {{HostAddress}}/user/register
+Content-Type: application/json
+
+{
+  "email": "no-es-un-correo",
+  "password": "abc"
+}
+
+### Crear un rol. Requiere token: los endpoints de administración no son anónimos.
+# @name createRole
+POST {{HostAddress}}/roles
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "Administrators"
+}
+
+### Listar los roles, sin paginar.
+GET {{HostAddress}}/roles
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Listar los roles paginados.
+GET {{HostAddress}}/roles/paged?page=1&pageSize=20
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Obtener el rol recién creado.
+GET {{HostAddress}}/roles/{{createRole.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Renombrar el rol.
+PUT {{HostAddress}}/roles/{{createRole.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "Auditors"
+}
+
+### Obtener el usuario del token.
+# @name currentUser
+GET {{HostAddress}}/users/current
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Listar los usuarios paginados, con sus roles.
+GET {{HostAddress}}/users/paged?page=1&pageSize=20
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Fijar los roles del usuario. La lista sustituye a la anterior.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/roles
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "roles": ["Auditors"]
+}
+
+### Un rol inexistente: 400 con la clave roles y sin aplicar ninguno.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/roles
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "roles": ["NoExiste"]
+}
+
+### Desactivar la cuenta. A partir de aquí, su login responde 400.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "isActive": false
+}
+
+### Reactivarla.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "isActive": true
+}
+
+### Eliminar el rol.
+DELETE {{HostAddress}}/roles/{{createRole.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Pedir el reinicio de la contraseña. Siempre 204: el testigo sale en el log.
+POST {{HostAddress}}/password/forgot
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com"
+}
+
+### Un correo sin cuenta recibe exactamente la misma respuesta.
+POST {{HostAddress}}/password/forgot
+Content-Type: application/json
+
+{
+  "email": "no-existe@example.com"
+}
+
+### Reiniciar la contraseña con el testigo del log.
+POST {{HostAddress}}/password/reset
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "token": "pega-aqui-el-testigo-del-log",
+  "newPassword": "OtraPassw0rd!"
+}
+
+### Cambiar la contraseña de la cuenta autenticada.
+POST {{HostAddress}}/password/change
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "currentPassword": "Passw0rd!",
+  "newPassword": "OtraPassw0rd!"
+}
+
+### Reenviar la confirmación del correo. Siempre 204.
+POST {{HostAddress}}/email/confirmation/send
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com"
+}
+
+### Confirmar el correo con el testigo del log.
+POST {{HostAddress}}/email/confirmation
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "token": "pega-aqui-el-testigo-del-log"
+}
+
+### Pedir el cambio de correo. El aviso va al correo nuevo.
+POST {{HostAddress}}/email/change
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "newEmail": "juan.perez.nuevo@example.com"
+}
+
+### Confirmar el cambio. Mueve Email y UserName a la vez.
+POST {{HostAddress}}/email/change/confirm
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "newEmail": "juan.perez.nuevo@example.com",
+  "token": "pega-aqui-el-testigo-del-log"
+}
+
+### Pedir el cambio de teléfono. El código sale por el puerto de SMS.
+POST {{HostAddress}}/phone/change
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "phoneNumber": "+51987654321"
+}
+
+### Confirmar el cambio de teléfono con el código del log.
+POST {{HostAddress}}/phone/change/confirm
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "phoneNumber": "+51987654321",
+  "token": "pega-aqui-el-codigo-del-log"
+}
+
+### Actualizar el perfil de la cuenta autenticada.
+PUT {{HostAddress}}/profile
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "firstName": "Juan Carlos",
+  "lastName": "Pérez"
+}
+
+### Preparar el doble factor: devuelve la clave para la aplicación de autenticación.
+# @name twoFactorSetup
+POST {{HostAddress}}/twofactor/setup
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Activar el doble factor con el código que muestra la aplicación.
+POST {{HostAddress}}/twofactor/enable
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "code": "123456"
+}
+
+### Con el doble factor activo, la autenticación exige el código.
+POST {{HostAddress}}/user/login
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "Passw0rd!",
+  "twoFactorCode": "123456"
+}
+
+### Regenerar los códigos de recuperación.
+POST {{HostAddress}}/twofactor/recovery-codes
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Desactivar el doble factor.
+POST {{HostAddress}}/twofactor/disable
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Darse de baja. Borra la cuenta; dejarlo al final del archivo no es casual.
+DELETE {{HostAddress}}/profile
+Authorization: Bearer {{login.response.body.$.accessToken}}

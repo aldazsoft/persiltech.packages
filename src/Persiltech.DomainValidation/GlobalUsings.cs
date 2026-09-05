@@ -1,0 +1,13 @@
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.DependencyInjection.Extensions;
+global using Persiltech.DomainValidation.Core;
+global using Persiltech.DomainValidation.Exceptions;
+global using Persiltech.DomainValidation.Extensions;
+global using Persiltech.DomainValidation.Helpers;
+global using Persiltech.DomainValidation.Interfaces;
+global using Persiltech.DomainValidation.Resources;
+global using Persiltech.DomainValidation.ValueObjects;
+global using Persiltech.Localizer;
+global using System.Collections;
+global using System.Linq.Expressions;
+global using System.Text.RegularExpressions;

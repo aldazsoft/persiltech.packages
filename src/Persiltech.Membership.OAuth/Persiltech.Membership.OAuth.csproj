@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Persiltech.Membership.OAuth</PackageId>
+    <Title>Persiltech.Membership.OAuth</Title>
+    <Description>Servidor de autorización OAuth 2.0 y OpenID Connect para Persiltech.Membership, construido sobre OpenIddict: flujo Authorization Code con PKCE, credenciales de cliente y renovación por refresh token, con las cuentas de ASP.NET Core Identity que administra el paquete base.</Description>
+    <VersionPrefix>0.2.0</VersionPrefix>
+    <PackageTags>dotnet;csharp;aspnetcore;oauth2;openid-connect;openiddict;identity;pkce;minimal-api</PackageTags>
+    <Authors>Edinson Aldaz</Authors>
+    <Company>Persiltech</Company>
+    <Product>Persiltech.Membership.OAuth</Product>
+    <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://aldazsoft.github.io/Membership.OAuth/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v0.2.0
+      - Primera publicación en nuget.org; la 0.1.0 fue interna
+      - Servidor de autorización sobre OpenIddict: Authorization Code con PKCE, credenciales de cliente y refresh token
+      - Las cuentas son las de ASP.NET Core Identity que administra Persiltech.Membership
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- El código fuente es privado. Sin metadata de repositorio en el .nuspec, que en
+       nuget.org sería un enlace muerto, y sin SourceLink, que el SDK activa por defecto
+       desde .NET 8 y apuntaría el depurador del consumidor a una URL sin acceso público. -->
+  <PropertyGroup>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
+  <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje
+       dentro del .nupkg. El README es el de este proyecto, no el del paquete base. -->
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="../../assets/icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- El framework compartido trae el enrutamiento y la autorización; OpenIddict y el
+       proveedor de almacenamiento van por Central Package Management. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="OpenIddict.AspNetCore" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" />
+  </ItemGroup>
+
+  <!-- Referencia de proyecto, no de paquete: los dos viven en el mismo repositorio y un
+       cambio en el núcleo tiene que verse aquí sin pasar por nuget.org. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Persiltech.Membership\Persiltech.Membership.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Persiltech.Membership.Tests" />
+  </ItemGroup>
+
+</Project>

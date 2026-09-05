@@ -1,0 +1,9 @@
+global using Persiltech.DomainValidation.Core;
+global using Persiltech.DomainValidation.Extensions.PropertySpecificationTreeExtensions;
+global using Persiltech.DomainValidation.Interfaces;
+global using Persiltech.DomainValidation.Resources;
+global using Persiltech.DomainValidation.Tests.Models;
+global using Persiltech.DomainValidation.ValueObjects;
+global using System.Globalization;
+global using System.Linq.Expressions;
+global using Xunit;

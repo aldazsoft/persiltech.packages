@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Persiltech.Membership.Email</PackageId>
+    <Title>Persiltech.Membership.Email</Title>
+    <Description>Adaptador de correo de Persiltech.Membership: compone los avisos de confirmación, reinicio de contraseña y cambio de correo a partir de plantillas HTML y los entrega por Persiltech.Email.</Description>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <PackageTags>dotnet;csharp;email;membership;templates;smtp</PackageTags>
+    <Authors>Edinson Aldaz</Authors>
+    <Company>Persiltech</Company>
+    <Product>Persiltech.Membership.Email</Product>
+    <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://aldazsoft.github.io/Membership.Email/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v0.1.0
+      - Primera versión: implementa IMembershipEmailSender de Persiltech.Membership con plantillas HTML
+      - La marca, los colores y las rutas del cliente son configuración, no código
+      - Las plantillas embebidas se sustituyen por archivo con MembershipEmailOptions.TemplatesDirectory
+      - Las opciones se validan al arrancar con IValidateOptions, acumulando todos los fallos
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- El código fuente es privado. Sin metadata de repositorio en el .nuspec, que en
+       nuget.org sería un enlace muerto, y sin SourceLink, que el SDK activa por defecto
+       desde .NET 8 y apuntaría el depurador del consumidor a una URL sin acceso público. -->
+  <PropertyGroup>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+
+  <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="../../assets/icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- Las plantillas viajan dentro del ensamblado: el consumidor las sustituye por archivo,
+       con MembershipEmailOptions.TemplatesDirectory, no copiándolas a su salida. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\**\*" />
+  </ItemGroup>
+
+  <!-- DynamicProxyGenAssembly2 es el ensamblado donde Castle DynamicProxy genera los dobles
+       de NSubstitute: sin él no puede sustituir las costuras internas del paquete. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Persiltech.Membership.Email.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Persiltech.Email" />
+    <PackageReference Include="Persiltech.Membership" />
+  </ItemGroup>
+
+</Project>

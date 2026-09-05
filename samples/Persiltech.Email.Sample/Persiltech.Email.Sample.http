@@ -1,0 +1,14 @@
+@HostAddress = http://localhost:5252
+
+### Envía un mensaje por el servidor SMTP de appsettings.Development.json.
+### Necesita un relay local escuchando en el 1025 (Papercut, MailHog): sin él, la petición
+### falla al conectar.
+POST {{HostAddress}}/email
+Content-Type: application/json
+
+{
+  "to": "Juan Pérez <juan.perez@example.com>",
+  "subject": "Confirma tu correo",
+  "htmlBody": "<p>Confirma tu correo pulsando <a href=\"https://example.com/confirm\">aquí</a>.</p>",
+  "textBody": "Confirma tu correo: https://example.com/confirm"
+}
