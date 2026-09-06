@@ -11,7 +11,7 @@ public class SpecificationStopOnFirstErrorTests
         IEnumerable<SpecificationError> expectedErrors)
     {
         // Act
-        var errors = await specification.ValidateAsync(entity);
+        var errors = await specification.ValidateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);

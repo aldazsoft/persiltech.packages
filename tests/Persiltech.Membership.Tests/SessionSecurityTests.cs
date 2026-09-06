@@ -58,7 +58,7 @@ public class SessionSecurityTests
         var provider = new ServiceCollection().BuildServiceProvider();
 
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => provider.SeedMembershipAdministratorAsync(null!));
+            () => provider.SeedMembershipAdministratorAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]

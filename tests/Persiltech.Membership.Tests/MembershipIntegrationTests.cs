@@ -12,11 +12,11 @@ public class MembershipIntegrationTests
 
         var accessToken = await application.RegisterAndLoginAsync();
 
-        var response = await application.AuthenticatedClient(accessToken).GetAsync("users/current");
+        var response = await application.AuthenticatedClient(accessToken).GetAsync("users/current", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var user = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var user = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
 
         Assert.Equal("juan.perez@example.com", user.GetProperty("email").GetString());
         Assert.True(user.GetProperty("isActive").GetBoolean());
@@ -31,7 +31,7 @@ public class MembershipIntegrationTests
 
         var response = await application.Client.PostAsJsonAsync(
             "user/login",
-            new { email = "juan.perez@example.com", password = "otra-cosa" });
+            new { email = "juan.perez@example.com", password = "otra-cosa" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -45,7 +45,7 @@ public class MembershipIntegrationTests
 
         var requested = await application.Client.PostAsJsonAsync(
             "email/confirmation/send",
-            new { email = "juan.perez@example.com" });
+            new { email = "juan.perez@example.com" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, requested.StatusCode);
 
@@ -53,7 +53,7 @@ public class MembershipIntegrationTests
 
         var confirmed = await application.Client.PostAsJsonAsync(
             "email/confirmation",
-            new { email = message.Email, token = message.Token });
+            new { email = message.Email, token = message.Token }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, confirmed.StatusCode);
     }
@@ -65,7 +65,7 @@ public class MembershipIntegrationTests
 
         var response = await application.Client.PostAsJsonAsync(
             "password/forgot",
-            new { email = "no-existe@example.com" });
+            new { email = "no-existe@example.com" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         Assert.Empty(application.Messages.Resets);
@@ -80,7 +80,7 @@ public class MembershipIntegrationTests
 
         var requested = await application.Client.PostAsJsonAsync(
             "password/forgot",
-            new { email = "juan.perez@example.com" });
+            new { email = "juan.perez@example.com" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, requested.StatusCode);
 
@@ -88,7 +88,7 @@ public class MembershipIntegrationTests
 
         var reset = await application.Client.PostAsJsonAsync(
             "password/reset",
-            new { email = message.Email, token = message.Token, newPassword = "OtraPassw0rd!" });
+            new { email = message.Email, token = message.Token, newPassword = "OtraPassw0rd!" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
 
@@ -105,7 +105,7 @@ public class MembershipIntegrationTests
 
         var requested = await client.PostAsJsonAsync(
             "email/change",
-            new { newEmail = "juan.nuevo@example.com" });
+            new { newEmail = "juan.nuevo@example.com" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, requested.StatusCode);
 
@@ -113,7 +113,7 @@ public class MembershipIntegrationTests
 
         var confirmed = await client.PostAsJsonAsync(
             "email/change/confirm",
-            new { newEmail = message.NewEmail, token = message.Token });
+            new { newEmail = message.NewEmail, token = message.Token }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, confirmed.StatusCode);
 
@@ -128,16 +128,16 @@ public class MembershipIntegrationTests
         var accessToken = await application.RegisterAndLoginAsync();
         var client = application.AuthenticatedClient(accessToken);
 
-        var created = await client.PostAsJsonAsync("roles", new { name = "Administrators" });
+        var created = await client.PostAsJsonAsync("roles", new { name = "Administrators" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
 
-        var current = await client.GetFromJsonAsync<JsonElement>("users/current");
+        var current = await client.GetFromJsonAsync<JsonElement>("users/current", TestContext.Current.CancellationToken);
         var userId = current.GetProperty("id").GetString();
 
         var assigned = await client.PutAsJsonAsync(
             $"users/{userId}/roles",
-            new { roles = new[] { "Administrators" } });
+            new { roles = new[] { "Administrators" } }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, assigned.StatusCode);
 
@@ -157,12 +157,12 @@ public class MembershipIntegrationTests
         var accessToken = await application.RegisterAndLoginAsync();
         var client = application.AuthenticatedClient(accessToken);
 
-        var current = await client.GetFromJsonAsync<JsonElement>("users/current");
+        var current = await client.GetFromJsonAsync<JsonElement>("users/current", TestContext.Current.CancellationToken);
         var userId = current.GetProperty("id").GetString();
 
         var response = await client.PutAsJsonAsync(
             $"users/{userId}/roles",
-            new { roles = new[] { "NoExiste" } });
+            new { roles = new[] { "NoExiste" } }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -175,16 +175,16 @@ public class MembershipIntegrationTests
         var accessToken = await application.RegisterAndLoginAsync();
         var client = application.AuthenticatedClient(accessToken);
 
-        var current = await client.GetFromJsonAsync<JsonElement>("users/current");
+        var current = await client.GetFromJsonAsync<JsonElement>("users/current", TestContext.Current.CancellationToken);
         var userId = current.GetProperty("id").GetString();
 
-        var deactivated = await client.PutAsJsonAsync($"users/{userId}/status", new { isActive = false });
+        var deactivated = await client.PutAsJsonAsync($"users/{userId}/status", new { isActive = false }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, deactivated.StatusCode);
 
         var response = await application.Client.PostAsJsonAsync(
             "user/login",
-            new { email = "juan.perez@example.com", password = "Passw0rd!" });
+            new { email = "juan.perez@example.com", password = "Passw0rd!" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -199,21 +199,21 @@ public class MembershipIntegrationTests
 
         var updated = await client.PutAsJsonAsync(
             "profile",
-            new { firstName = "Juan Carlos", lastName = "Pérez" });
+            new { firstName = "Juan Carlos", lastName = "Pérez" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
 
-        var profile = await updated.Content.ReadFromJsonAsync<JsonElement>();
+        var profile = await updated.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
 
         Assert.Equal("Juan Carlos", profile.GetProperty("firstName").GetString());
 
-        var deleted = await client.DeleteAsync("profile");
+        var deleted = await client.DeleteAsync("profile", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
 
         var response = await application.Client.PostAsJsonAsync(
             "user/login",
-            new { email = "juan.perez@example.com", password = "Passw0rd!" });
+            new { email = "juan.perez@example.com", password = "Passw0rd!" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -226,11 +226,11 @@ public class MembershipIntegrationTests
         var accessToken = await application.RegisterAndLoginAsync();
 
         var response = await application.AuthenticatedClient(accessToken)
-            .PostAsync("twofactor/setup", content: null);
+            .PostAsync("twofactor/setup", content: null, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var setup = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var setup = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
 
         Assert.False(string.IsNullOrWhiteSpace(setup.GetProperty("sharedKey").GetString()));
         Assert.Equal("juan.perez@example.com", setup.GetProperty("email").GetString());
@@ -251,12 +251,12 @@ public class MembershipIntegrationTests
         {
             await application.Client.PostAsJsonAsync(
                 "user/login",
-                new { email = "juan.perez@example.com", password = "otra-cosa" });
+                new { email = "juan.perez@example.com", password = "otra-cosa" }, TestContext.Current.CancellationToken);
         }
 
         var response = await application.Client.PostAsJsonAsync(
             "user/login",
-            new { email = "juan.perez@example.com", password = "Passw0rd!" });
+            new { email = "juan.perez@example.com", password = "Passw0rd!" }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -272,8 +272,8 @@ public class MembershipIntegrationTests
             "Ada",
             "Lovelace");
 
-        Assert.True(await application.Services.SeedMembershipAdministratorAsync(administrator));
-        Assert.False(await application.Services.SeedMembershipAdministratorAsync(administrator));
+        Assert.True(await application.Services.SeedMembershipAdministratorAsync(administrator, TestContext.Current.CancellationToken));
+        Assert.False(await application.Services.SeedMembershipAdministratorAsync(administrator, TestContext.Current.CancellationToken));
 
         var accessToken = await application.LoginAsync("admin@example.com", "Passw0rd!");
         var token = new JsonWebTokenHandler().ReadJsonWebToken(accessToken);
@@ -288,7 +288,7 @@ public class MembershipIntegrationTests
     {
         await using var application = await MembershipApplication.StartAsync();
 
-        var response = await application.Client.GetAsync("roles");
+        var response = await application.Client.GetAsync("roles", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }

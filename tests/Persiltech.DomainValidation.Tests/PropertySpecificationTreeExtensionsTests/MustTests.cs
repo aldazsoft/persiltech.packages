@@ -21,7 +21,7 @@ public class MustTests
         var entity = new UserRegistration { Password = passwordValue };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -57,7 +57,7 @@ public class MustTests
         };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -87,7 +87,7 @@ public class MustTests
         var entity = new UserRegistration { Password = "12345" };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(errors);

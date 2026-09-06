@@ -23,7 +23,7 @@ public class EmailAddressTests
         var entity = new UserRegistration { Email = email! };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -51,7 +51,7 @@ public class EmailAddressTests
         var entity = new UserRegistration { Email = "name" };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(errors);
@@ -72,7 +72,7 @@ public class EmailAddressTests
         var entity = new UserRegistration { Email = "name" };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(errors);

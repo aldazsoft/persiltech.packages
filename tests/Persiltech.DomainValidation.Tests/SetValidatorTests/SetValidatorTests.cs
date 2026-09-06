@@ -21,7 +21,7 @@ public class SetValidatorTests
                 ]);
 
         // Act
-        var result = await validator.ValidateAsync(order);
+        var result = await validator.ValidateAsync(order, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult.IsValid, result.IsValid);

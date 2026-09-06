@@ -19,7 +19,7 @@ public class NullableComparisonTests
 
         // Act
         var errors = await tree.Specifications[0].EvaluateAsync(
-            new StockAdjustment { Quantity = quantity });
+            new StockAdjustment { Quantity = quantity }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -41,7 +41,7 @@ public class NullableComparisonTests
 
         // Act
         var errors = await tree.Specifications[0].EvaluateAsync(
-            new StockAdjustment { Quantity = quantity });
+            new StockAdjustment { Quantity = quantity }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -68,7 +68,7 @@ public class NullableComparisonTests
             {
                 Quantity = quantity,
                 ConfirmedQuantity = confirmedQuantity
-            });
+            }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -85,7 +85,7 @@ public class NullableComparisonTests
 
         // Act
         var errors = await tree.Specifications[0].EvaluateAsync(
-            new StockAdjustment { UnitPrice = 0.01m });
+            new StockAdjustment { UnitPrice = 0.01m }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(errors);

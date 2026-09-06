@@ -26,7 +26,7 @@ public class SpecificationTest
         var entity = new CreateOrder { CustomerId = null! };
 
         // Act
-        var errors = await Specification.EvaluateAsync(entity);
+        var errors = await Specification.EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Single(errors);
@@ -41,7 +41,7 @@ public class SpecificationTest
         var entity = new CreateOrder { CustomerId = "ALFKI" };
 
         // Act
-        var errors = await Specification.EvaluateAsync(entity);
+        var errors = await Specification.EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(errors);

@@ -21,7 +21,7 @@ public class HasFixedLenghtTests
         var entity = new CreateOrder { CustomerId = customerId! };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -49,7 +49,7 @@ public class HasFixedLenghtTests
         var entity = new CreateOrder { CustomerId = "" };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(errors);
@@ -70,7 +70,7 @@ public class HasFixedLenghtTests
         var entity = new CreateOrder { CustomerId = "" };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(errors);

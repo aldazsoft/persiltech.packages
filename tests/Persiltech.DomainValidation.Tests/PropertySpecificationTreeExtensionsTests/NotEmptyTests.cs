@@ -19,7 +19,7 @@ public class NotEmptyTests
         var entity = new CreateOrder { OrderDetails = details! };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedResult, errors.Count == 0);
@@ -47,7 +47,7 @@ public class NotEmptyTests
         var entity = new CreateOrder { OrderDetails = null! };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(errors);
@@ -68,7 +68,7 @@ public class NotEmptyTests
         var entity = new CreateOrder { OrderDetails = null! };
 
         // Act
-        var errors = await tree.Specifications[0].EvaluateAsync(entity);
+        var errors = await tree.Specifications[0].EvaluateAsync(entity, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(errors);

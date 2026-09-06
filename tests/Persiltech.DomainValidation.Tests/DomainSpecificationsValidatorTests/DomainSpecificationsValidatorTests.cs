@@ -15,7 +15,7 @@ public class DomainSpecificationsValidatorTests
             new DomainSpecificationsValidator<UserRegistration>(specifications);
 
         // Act
-        var result = await validator.ValidateAsync(user);
+        var result = await validator.ValidateAsync(user, TestContext.Current.CancellationToken);
 
         // Arrange
         Assert.Equal(expectedResult.IsValid, result.IsValid);
