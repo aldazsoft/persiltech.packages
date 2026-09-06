@@ -21,7 +21,7 @@ Las dependencias externas no aparecen aqui: ya estan publicadas y no imponen ord
 | `Persiltech.Blazor.JSInterop` | 1.1.2 | - |
 | `Persiltech.Email` | 0.1.1 | - |
 | `Persiltech.Localizer` | 1.0.3 | - |
-| `Persiltech.Membership` | 0.5.0 | - |
+| `Persiltech.Membership` | 0.6.0 | - |
 | `Persiltech.UserServices.Abstractions` | 0.1.15 | - |
 
 ## Nivel 2 - dependen del nivel 1
