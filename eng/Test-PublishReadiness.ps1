@@ -16,14 +16,20 @@
         este mismo lote. Si no, el consumidor falla al restaurar con NU1101 o NU1102.
 
     Comprobacion 2 - Contenido sin deriva
-        Si la version local de un paquete ya esta publicada, su API publica debe coincidir
-        con la publicada. Si difiere, se cambio el codigo sin subir la version: el
-        consumidor restaura sin quejarse y revienta en ejecucion.
+        Si la version local de un paquete ya esta publicada, lo que se generaria ahora debe
+        coincidir con lo que hay en el feed. Se comparan dos dimensiones:
 
-        La comparacion usa el .xml de documentacion que viaja en lib/. Es un inventario
-        fiel de la API publica porque el repositorio compila con TreatWarningsAsErrors y
-        no suprime CS1591, de modo que todo miembro publico esta documentado. Detecta
-        cambios de superficie; no detecta cambios que solo alteran la implementacion.
+        - API publica, leida del .xml de documentacion que viaja en lib/. Es un inventario
+          fiel porque el repositorio compila con TreatWarningsAsErrors y no suprime CS1591,
+          de modo que todo miembro publico esta documentado. Si difiere, se cambio el codigo
+          sin subir la version: el consumidor restaura sin quejarse y revienta en ejecucion.
+
+        - Dependencias declaradas en el .nuspec, calificadas por framework de destino. Esta
+          dimension se desincroniza sola: con <ProjectReference> el suelo lo recalcula
+          'dotnet pack' desde el proyecto vecino, asi que publicar una version de un paquete
+          base cambia el .nuspec de todos sus consumidores sin que nadie edite un .csproj.
+
+        No detecta cambios que solo alteran la implementacion sin tocar ninguna de las dos.
 
 .PARAMETER PackageDirectory
     Carpeta con los .nupkg a verificar. Si se omite, el script ejecuta 'dotnet pack' de la
@@ -136,10 +142,19 @@ function Get-PackageManifest {
 
         [xml] $document = Read-ZipEntryText -Entry $entry
 
+        # Las dependencias cuelgan de un <group targetFramework="..."> salvo en paquetes de
+        # esquema antiguo, donde van sueltas bajo <dependencies>. Se contemplan ambos.
         $dependencies = foreach ($node in $document.SelectNodes("//*[local-name()='dependency']")) {
+            $parent = $node.ParentNode
+            $targetFramework = if ($parent -and $parent.LocalName -eq 'group') {
+                $parent.GetAttribute('targetFramework')
+            }
+            else { '' }
+
             [pscustomobject]@{
-                Id           = $node.GetAttribute('id')
-                VersionRange = $node.GetAttribute('version')
+                Id              = $node.GetAttribute('id')
+                VersionRange    = $node.GetAttribute('version')
+                TargetFramework = $targetFramework
             }
         }
 
@@ -176,6 +191,18 @@ function Get-PublicApi {
         , @($members | Sort-Object -Unique)
     }
     finally { $archive.Dispose() }
+}
+
+# Dependencias en forma comparable, calificadas por framework de destino igual que la API.
+# Se omite a proposito el atributo 'exclude': lo emite el SDK y puede variar entre versiones
+# sin que el paquete haya cambiado, lo que produciria diferencias falsas.
+function Format-Dependency {
+    param([object[]] $Dependency)
+
+    , @($Dependency | ForEach-Object {
+        $targetFramework = if ($_.TargetFramework) { $_.TargetFramework } else { '(sin grupo)' }
+        "$targetFramework $($_.Id) $($_.VersionRange)"
+    } | Sort-Object -Unique)
 }
 
 # Devuelve $null cuando el identificador no existe en el feed, distinguiendo asi el caso
@@ -389,20 +416,49 @@ try {
             }
 
             $publishedPath = Save-PublishedPackage -Id $package.Id -Version $package.Version -Destination $downloadDirectory
-            $publishedApi = Get-PublicApi -Path $publishedPath
-            $localApi = Get-PublicApi -Path $package.Path
+            $publishedManifest = Get-PackageManifest -Path $publishedPath
 
-            $difference = @(Compare-Object -ReferenceObject $publishedApi -DifferenceObject $localApi)
+            # Dos dimensiones, porque se desincronizan por separado. La API cambia al tocar
+            # el codigo; las dependencias cambian solas, sin que nadie edite el .csproj, en
+            # cuanto <ProjectReference> recalcula el suelo desde el proyecto vecino.
+            $surface = @(
+                [pscustomobject]@{
+                    Name      = 'API publica'
+                    Published = Get-PublicApi -Path $publishedPath
+                    Local     = Get-PublicApi -Path $package.Path
+                }
+                [pscustomobject]@{
+                    Name      = 'Dependencias declaradas'
+                    Published = Format-Dependency -Dependency $publishedManifest.Dependencies
+                    Local     = Format-Dependency -Dependency $package.Dependencies
+                }
+            )
 
-            if ($difference.Count -eq 0) {
-                Add-Warning "$($package.Version) ya esta publicada con esta misma API. No hay nada que publicar."
+            $divergent = [System.Collections.Generic.List[string]]::new()
+
+            foreach ($dimension in $surface) {
+                $difference = @(Compare-Object -ReferenceObject $dimension.Published -DifferenceObject $dimension.Local)
+                if ($difference.Count -eq 0) { continue }
+
+                $divergent.Add($dimension.Name)
+                $dimension | Add-Member -NotePropertyName Difference -NotePropertyValue $difference
+            }
+
+            if ($divergent.Count -eq 0) {
+                Add-Warning "$($package.Version) ya esta publicada y es identica. No hay nada que publicar."
                 continue
             }
 
-            Add-Failure "$($package.Version) ya esta publicada con OTRA API. Sube la version antes de publicar."
-            foreach ($entry in $difference) {
-                $marker = if ($entry.SideIndicator -eq '=>') { 'solo local    ' } else { 'solo publicado' }
-                Write-Host "               $marker  $($entry.InputObject)" -ForegroundColor Red
+            Add-Failure "$($package.Version) ya esta publicada con otro contenido ($($divergent -join ' y ')). Sube la version antes de publicar."
+
+            foreach ($dimension in $surface) {
+                if (-not $dimension.PSObject.Properties['Difference']) { continue }
+
+                Write-Host "               $($dimension.Name):" -ForegroundColor Red
+                foreach ($entry in $dimension.Difference) {
+                    $marker = if ($entry.SideIndicator -eq '=>') { 'solo local    ' } else { 'solo publicado' }
+                    Write-Host "                 $marker  $($entry.InputObject)" -ForegroundColor Red
+                }
             }
         }
     }
