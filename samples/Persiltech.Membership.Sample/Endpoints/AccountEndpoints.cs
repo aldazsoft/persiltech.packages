@@ -24,6 +24,25 @@ internal static class AccountEndpoints
             .AllowAnonymous()
             .DisableAntiforgery();
 
+        // La URI de vuelta del cliente público. En una aplicación real la atiende el
+        // navegador y el código se canjea desde JavaScript; aquí se muestra en pantalla
+        // para poder copiarlo al archivo .http y completar el canje a mano.
+        endpoints.MapGet("/callback", (string? code, string? error, string? error_description) =>
+            Results.Content(
+                error is not null
+                    ? $"""
+                       <h1>El servidor rechazó la petición</h1>
+                       <p><b>{error}</b>: {error_description}</p>
+                       """
+                    : $"""
+                       <h1>Código de autorización recibido</h1>
+                       <p>Cópialo al archivo .http, en la variable <code>@authorizationCode</code>,
+                          y ejecuta la petición de canje. Caduca en pocos minutos y solo sirve una vez.</p>
+                       <pre>{code}</pre>
+                       """,
+                "text/html"))
+            .AllowAnonymous();
+
         // Pone a prueba el token recién emitido: sin esta ruta no habría forma de comprobar
         // que el esquema del consumidor lo acepta y que ClaimTypes.Name llega a
         // User.Identity.Name.
