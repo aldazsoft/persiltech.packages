@@ -176,7 +176,13 @@ if ($Check) {
         exit 1
     }
 
-    if ((Get-Content -LiteralPath $Path -Raw) -ne $content) {
+    # Se comparan contenidos, no bytes: los finales de linea dependen del checkout. El
+    # archivo se guarda en el repositorio con LF, y git lo entrega con CRLF en Windows
+    # (core.autocrlf) y con LF en el runner de Linux. Sin normalizar, este paso pasaria en
+    # una maquina y fallaria en la otra con el mismo commit.
+    $onDisk = (Get-Content -LiteralPath $Path -Raw) -replace "`r`n", "`n"
+
+    if ($onDisk -ne ($content -replace "`r`n", "`n")) {
         Write-Host "'$Path' esta desactualizado respecto al grafo de src/. Vuelve a ejecutar eng/New-PublishOrder.ps1." -ForegroundColor Red
         exit 1
     }
