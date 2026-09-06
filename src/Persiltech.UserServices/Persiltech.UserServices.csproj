@@ -4,7 +4,7 @@
     <PackageId>Persiltech.UserServices</PackageId>
     <Title>Persiltech.UserServices</Title>
     <Description>Implementación para ASP.NET Core de IUserService, el Output Port que define Persiltech.UserServices.Abstractions, que resuelve la identidad y el estado de autenticación del usuario actual a partir de HttpContext.User.</Description>
-    <VersionPrefix>0.1.5</VersionPrefix>
+    <VersionPrefix>0.1.6</VersionPrefix>
     <PackageTags>dotnet;csharp;aspnetcore;authentication;identity;httpcontext;clean-architecture</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -21,6 +21,17 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v0.1.6
+      - Estrena estas notas de versión, que el paquete no declaraba
+      - El .nuspec declara el repositorio, ahora público, y activa SourceLink: el depurador del consumidor puede entrar al código fuente
+      - El soporte pasa a las incidencias de GitHub, y el README documenta la 0.1.5, que se publicó sin su entrada en el historial
+      - El suelo de Persiltech.UserServices.Abstractions sube de 0.1.12 a 0.1.15
+      - Sin cambios en el código ni en la superficie pública
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
