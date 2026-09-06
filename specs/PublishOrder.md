@@ -31,7 +31,7 @@ Las dependencias externas no aparecen aqui: ya estan publicadas y no imponen ord
 | `Persiltech.DomainValidation` | 2.0.3 | Persiltech.Localizer |
 | `Persiltech.Membership.Email` | 0.1.0 | Persiltech.Email<br>Persiltech.Membership |
 | `Persiltech.Membership.OAuth` | 0.2.0 | Persiltech.Membership |
-| `Persiltech.Results` | 1.0.1 | Persiltech.Localizer |
+| `Persiltech.Results` | 1.0.2 | Persiltech.Localizer |
 | `Persiltech.UserServices` | 0.1.5 | Persiltech.UserServices.Abstractions |
 
 ---

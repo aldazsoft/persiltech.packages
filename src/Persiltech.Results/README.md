@@ -172,6 +172,7 @@ The source lives in the [monorepo](https://github.com/aldazsoft/persiltech.packa
 
 | Version | Changes |
 | ------- | ------- |
+| 1.0.2   | The `.nuspec` now declares the repository, which is public, and SourceLink is on, so consumers can step into the source while debugging. The README links to the monorepo and support moves to GitHub issues. The floor for `Persiltech.Localizer` moves from 1.0.1 to 1.0.3. **No change to the public surface.** |
 | 1.0.1   | The project website now points to the portfolio page where the package is documented. The real licence text ships inside the `.nupkg` instead of an SPDX expression. The public surface is documented with XML comments. This README is written from scratch: the previous one was three lines and named a package that does not exist. No change to the public API. |
 | 1.0.0   | First release of `Result`, `Result<TSuccess>` and `Result<TSuccess, TError>`. |
 
