@@ -8,6 +8,7 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path=".config/dotnet-tools.json" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/eng/">
     <File Path=".github/workflows/ci.yml" />
@@ -19,9 +20,9 @@
     <Project Path="src/Persiltech.DomainValidation/Persiltech.DomainValidation.csproj" />
     <Project Path="src/Persiltech.Email/Persiltech.Email.csproj" />
     <Project Path="src/Persiltech.Localizer/Persiltech.Localizer.csproj" />
-    <Project Path="src/Persiltech.Membership/Persiltech.Membership.csproj" />
     <Project Path="src/Persiltech.Membership.Email/Persiltech.Membership.Email.csproj" />
     <Project Path="src/Persiltech.Membership.OAuth/Persiltech.Membership.OAuth.csproj" />
+    <Project Path="src/Persiltech.Membership/Persiltech.Membership.csproj" />
     <Project Path="src/Persiltech.Results/Persiltech.Results.csproj" />
     <Project Path="src/Persiltech.UserServices.Abstractions/Persiltech.UserServices.Abstractions.csproj" />
     <Project Path="src/Persiltech.UserServices/Persiltech.UserServices.csproj" />

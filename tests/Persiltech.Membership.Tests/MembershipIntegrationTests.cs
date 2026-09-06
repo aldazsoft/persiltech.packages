@@ -292,4 +292,86 @@ public class MembershipIntegrationTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task AnUnconfirmedEmailAuthenticatesWhenIdentityDoesNotRequireConfirmation()
+    {
+        await using var application = await MembershipApplication.StartAsync();
+
+        await RegisterAsync(application);
+
+        Assert.False(await IsEmailConfirmedAsync(application));
+
+        var response = await LoginAsync(application);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("accessToken").GetString()));
+    }
+
+    [Fact]
+    public async Task AnUnconfirmedEmailIsRejectedWhenIdentityRequiresConfirmation()
+    {
+        await using var application = await MembershipApplication.StartAsync(
+            identity => identity.SignIn.RequireConfirmedEmail = true);
+
+        await RegisterAsync(application);
+
+        Assert.False(await IsEmailConfirmedAsync(application));
+
+        var response = await LoginAsync(application);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // IdentityOptions ya es una clase de opciones, asi que exigir el correo confirmado no
+    // necesita ninguna opcion propia del paquete: se gobierna desde appsettings con el
+    // enlace de configuracion de siempre, igual que la politica de contrasenas o el bloqueo.
+    [Fact]
+    public async Task RequiringAConfirmedEmailCanComeFromConfiguration()
+    {
+        await using var application = await MembershipApplication.StartAsync(
+            settings: new Dictionary<string, string?>
+            {
+                ["Identity:SignIn:RequireConfirmedEmail"] = "true"
+            });
+
+        Assert.True(application.Services
+            .GetRequiredService<IOptions<IdentityOptions>>()
+            .Value.SignIn.RequireConfirmedEmail);
+
+        await RegisterAsync(application);
+
+        var response = await LoginAsync(application);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private static async Task RegisterAsync(MembershipApplication application)
+    {
+        var response = await application.Client.PostAsJsonAsync(
+            "user/register",
+            new { email = "juan.perez@example.com", password = "Passw0rd!", firstName = "Juan", lastName = "Pérez" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    private static Task<HttpResponseMessage> LoginAsync(MembershipApplication application) =>
+        application.Client.PostAsJsonAsync(
+            "user/login",
+            new { email = "juan.perez@example.com", password = "Passw0rd!" },
+            TestContext.Current.CancellationToken);
+
+    private static async Task<bool> IsEmailConfirmedAsync(MembershipApplication application)
+    {
+        using var scope = application.Services.CreateScope();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync("juan.perez@example.com");
+
+        return user is not null && await userManager.IsEmailConfirmedAsync(user);
+    }
 }

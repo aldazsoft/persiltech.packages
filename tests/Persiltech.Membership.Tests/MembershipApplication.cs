@@ -45,9 +45,14 @@ internal sealed class MembershipApplication : IAsyncDisposable
     /// Arranca la aplicación con el esquema ya creado.
     /// </summary>
     /// <param name="configureIdentity">Ajustes de Identity para la prueba.</param>
+    /// <param name="settings">
+    /// Valores de configuración de la aplicación, para las pruebas que enlazan opciones
+    /// desde la configuración en lugar de fijarlas con un delegado.
+    /// </param>
     /// <returns>La aplicación lista para recibir peticiones.</returns>
     internal static async Task<MembershipApplication> StartAsync(
-        Action<IdentityOptions>? configureIdentity = null)
+        Action<IdentityOptions>? configureIdentity = null,
+        IEnumerable<KeyValuePair<string, string?>>? settings = null)
     {
         // La conexión se mantiene abierta a propósito: SQLite descarta la base en memoria
         // en cuanto se cierra la última.
@@ -57,6 +62,11 @@ internal sealed class MembershipApplication : IAsyncDisposable
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Logging.ClearProviders();
+
+        if (settings is not null)
+        {
+            builder.Configuration.AddInMemoryCollection(settings);
+        }
 
         builder.Services.AddMembershipServices(
             jwt =>
@@ -72,6 +82,11 @@ internal sealed class MembershipApplication : IAsyncDisposable
         {
             builder.Services.Configure(configureIdentity);
         }
+
+        // El cableado que haría un consumidor para gobernar Identity desde appsettings.
+        // El paquete no participa: IdentityOptions ya es una clase de opciones, así que se
+        // enlaza con el sistema de configuración de siempre.
+        builder.Services.Configure<IdentityOptions>(builder.Configuration.GetSection("Identity"));
 
         builder.Services.AddSingleton<RecordingMessageSender>();
         builder.Services.AddSingleton<IMembershipEmailSender>(
