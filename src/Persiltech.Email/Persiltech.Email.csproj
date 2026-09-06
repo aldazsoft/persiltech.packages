@@ -4,7 +4,7 @@
     <PackageId>Persiltech.Email</PackageId>
     <Title>Persiltech.Email</Title>
     <Description>Envío de correo electrónico por SMTP en .NET: el contrato IEmailSender y su implementación con MailKit, con configuración por Options y registro en la inyección de dependencias.</Description>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.1.1</VersionPrefix>
     <PackageTags>dotnet;csharp;email;smtp;mailkit</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -25,6 +25,11 @@
 
   <PropertyGroup>
     <PackageReleaseNotes>
+      v0.1.1
+      - El .nuspec declara el repositorio, ahora público, y activa SourceLink: el depurador del consumidor puede entrar al código fuente
+      - El README enlaza al monorepo y el soporte pasa a las incidencias de GitHub
+      - Sin cambios en el código ni en la superficie pública
+
       v0.1.0
       - Primera versión: el contrato IEmailSender y su implementación SMTP con MailKit
       - Las opciones se validan al arrancar con IValidateOptions, acumulando todos los fallos

@@ -236,6 +236,15 @@ function Get-PackageReadme {
     finally { $archive.Dispose() }
 }
 
+# README en lineas comparables. Un paquete sin README devuelve una coleccion vacia, que
+# frente a una con contenido se reporta como diferencia, que es lo correcto.
+function Split-Readme {
+    param([string] $Readme)
+
+    if (-not $Readme) { return , @() }
+    , @(($Readme -replace "`r`n", "`n") -split "`n")
+}
+
 # Secciones que todo README de la casa declara. Se aceptan los dos idiomas porque el
 # repositorio los mezcla: unos paquetes documentan en español y otros en inglés.
 function Test-ReadmeSection {
@@ -474,6 +483,14 @@ try {
                     Published = Format-Dependency -Dependency $publishedManifest.Dependencies
                     Local     = Format-Dependency -Dependency $package.Dependencies
                 }
+                # El README viaja dentro del paquete y es lo que se lee en la ficha, asi que
+                # un cambio ahi es un cambio de contenido publicado. Se compara por lineas y
+                # normalizando los finales, que dependen del checkout y no del contenido.
+                [pscustomobject]@{
+                    Name      = 'README'
+                    Published = Split-Readme -Readme (Get-PackageReadme -Path $publishedPath)
+                    Local     = Split-Readme -Readme (Get-PackageReadme -Path $package.Path)
+                }
             )
 
             $divergent = [System.Collections.Generic.List[string]]::new()
@@ -520,7 +537,9 @@ try {
             $section = @(
                 [pscustomobject]@{ Name = 'Historial de versiones'; Heading = @('Historial de versiones', 'Version history') }
                 [pscustomobject]@{ Name = 'Soporte';                Heading = @('Soporte', 'Support') }
-                [pscustomobject]@{ Name = 'Apoya el desarrollo';    Heading = @('Apoya el desarrollo', 'Support the development') }
+                # El repositorio usa las dos redacciones en español; ninguna es preferible,
+                # así que se aceptan ambas en lugar de forzar un reescrito de 4 READMEs.
+                [pscustomobject]@{ Name = 'Apoyar el desarrollo';   Heading = @('Apoyar el desarrollo', 'Apoya el desarrollo', 'Support the development') }
             )
 
             $faulty = $false

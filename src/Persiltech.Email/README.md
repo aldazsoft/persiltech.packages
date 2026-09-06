@@ -180,6 +180,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.1.1   | El `.nuspec` declara el repositorio, ahora público, y se activa SourceLink: el depurador del consumidor puede entrar al código fuente. El README enlaza al monorepo y el soporte pasa a las incidencias de GitHub. Sin cambios en el código ni en la superficie pública. |
 | 0.1.0   | Primera versión: el contrato `IEmailSender`, el `EmailMessage` y la implementación SMTP con MailKit, con las opciones validadas al arrancar. |
 
 ## Soporte
