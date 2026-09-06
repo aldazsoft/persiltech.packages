@@ -4,7 +4,7 @@
     <PackageId>Persiltech.DomainValidation</PackageId>
     <Title>Clean Architecture: DomainValidation</Title>
     <Description>Una biblioteca .NET para validación de reglas de negocio en aplicaciones que implementan Clean Architecture, desarrollada durante el entrenamiento "Introducción a Clean Architecture en aplicaciones .NET" impartido por Miguel Muñoz Serafín.</Description>
-    <VersionPrefix>2.0.2</VersionPrefix>
+    <VersionPrefix>2.0.3</VersionPrefix>
     <PackageTags>clean-architecture;business-rules;validation;dotnet;csharp;architecture</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -25,6 +25,12 @@
 
   <PropertyGroup>
     <PackageReleaseNotes>
+      v2.0.3
+      - El .nuspec declara el repositorio, ahora público, y activa SourceLink: el depurador del consumidor puede entrar al código fuente
+      - El README enlaza al monorepo y el soporte pasa a las incidencias de GitHub
+      - El suelo de Persiltech.Localizer sube de 1.0.1 a 1.0.3, y el de Microsoft.Extensions.DependencyInjection.Abstractions de 10.0.10 a 10.0.11
+      - Sin cambios en el código ni en la superficie pública
+
       v2.0.2
       - Renueva el icono del paquete: la mitad de peso (12 401 -> 6 575 bytes) con la misma resolución de 128 x 128
       - Sin cambios en el código ni en la superficie pública
