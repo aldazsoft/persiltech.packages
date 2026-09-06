@@ -154,6 +154,7 @@ The source lives in the [monorepo](https://github.com/aldazsoft/persiltech.packa
 
 | Version | Changes |
 | ------- | ------- |
+| 1.0.3   | The `.nuspec` now declares the repository, which is public, and SourceLink is on, so consumers can step into the source while debugging. The README links to the monorepo and support moves to GitHub issues. `Microsoft.Extensions.Localization` moves from 10.0.9 to 10.0.11. **No change to the public surface.** |
 | 1.0.2   | The project website now points to the portfolio page where the package is documented. The real licence text ships inside the `.nupkg` instead of an SPDX expression. The public surface is documented with XML comments, so IntelliSense works for consumers. No change to the public API. |
 | 1.0.0 – 1.0.1 | Initial releases of `LocalizationUtils<TEntity>` and `CultureScope`. |
 
