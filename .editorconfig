@@ -65,7 +65,10 @@ dotnet_diagnostic.IDE0055.severity = warning
 # Los using individuales no se usan en esta solución: cada proyecto declara sus
 # namespaces externos en su GlobalUsings.cs.
 
-dotnet_sort_system_directives_first = true
+# En false a propósito: la convención de la casa ordena por el namespace completo, en orden
+# ordinal ascendente, y ahí System va al final. Con esta opción en true el editor sube los
+# System al principio en cada limpieza de usings y deja el archivo fuera de convención.
+dotnet_sort_system_directives_first = false
 dotnet_separate_import_directive_groups = false
 csharp_using_directive_placement = outside_namespace:suggestion
 
