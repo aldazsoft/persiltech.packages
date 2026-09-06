@@ -16,6 +16,7 @@ app.UseAuthorization();
 app.UseCustomOpenApi();
 
 app.MapMembershipEndpoints();
+app.MapSessionEndpoints();
 app.MapPasswordEndpoints();
 app.MapEmailEndpoints();
 app.MapPhoneNumberEndpoints();

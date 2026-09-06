@@ -25,6 +25,67 @@ Content-Type: application/json
 GET {{HostAddress}}/user/me
 Authorization: Bearer {{login.response.body.$.accessToken}}
 
+### Renovar la sesión: consume el testigo y devuelve un par nuevo.
+# @name refresh
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
+
+### El token de acceso recién renovado sirve igual.
+GET {{HostAddress}}/user/me
+Authorization: Bearer {{refresh.response.body.$.accessToken}}
+
+### Reutilizar el testigo ya consumido: 401, y además tumba la familia entera.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
+
+### Tras la detección de reutilización, el testigo nuevo tampoco vale: 401.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh.response.body.$.refreshToken}}"
+}
+
+### Cerrar sesión revoca la familia del testigo. Siempre 204.
+# @name logout
+POST {{HostAddress}}/user/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
+
+### Cerrar sesión con un testigo que no existe: 204 también, para no filtrar nada.
+POST {{HostAddress}}/user/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "un-testigo-que-nadie-emitio"
+}
+
+### Testigo desconocido al renovar: 401.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "un-testigo-que-nadie-emitio"
+}
+
+### Testigo ausente: 400 con ValidationProblemDetails.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+}
+
 ### Credenciales inválidas: 400 con el error en la clave vacía.
 POST {{HostAddress}}/user/login
 Content-Type: application/json
