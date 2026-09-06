@@ -31,6 +31,7 @@
     <Project Path="tests/Persiltech.Blazor.JSInterop.Tests/Persiltech.Blazor.JSInterop.Tests.csproj" />
     <Project Path="tests/Persiltech.DomainValidation.Tests/Persiltech.DomainValidation.Tests.csproj" />
     <Project Path="tests/Persiltech.Email.Tests/Persiltech.Email.Tests.csproj" />
+    <Project Path="tests/Persiltech.Localizer.Tests/Persiltech.Localizer.Tests.csproj" />
     <Project Path="tests/Persiltech.Membership.Email.Tests/Persiltech.Membership.Email.Tests.csproj" />
     <Project Path="tests/Persiltech.Membership.Tests/Persiltech.Membership.Tests.csproj" />
     <Project Path="tests/Persiltech.Results.Tests/Persiltech.Results.Tests.csproj" />
