@@ -18,11 +18,11 @@ Las dependencias externas no aparecen aqui: ya estan publicadas y no imponen ord
 
 | Paquete | Version | Depende de |
 | --- | --- | --- |
-| `Persiltech.Blazor.JSInterop` | 1.1.1 | - |
+| `Persiltech.Blazor.JSInterop` | 1.1.2 | - |
 | `Persiltech.Email` | 0.1.0 | - |
 | `Persiltech.Localizer` | 1.0.2 | - |
 | `Persiltech.Membership` | 0.5.0 | - |
-| `Persiltech.UserServices.Abstractions` | 0.1.12 | - |
+| `Persiltech.UserServices.Abstractions` | 0.1.14 | - |
 
 ## Nivel 2 - dependen del nivel 1
 
