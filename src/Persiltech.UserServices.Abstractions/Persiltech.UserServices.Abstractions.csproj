@@ -4,7 +4,7 @@
     <PackageId>Persiltech.UserServices.Abstractions</PackageId>
     <Title>Persiltech.UserServices.Abstractions</Title>
     <Description>Define la interfaz IUserService, un Output Port que expone el estado de autenticación y la identidad del usuario actual, para que cualquier solución basada en Arquitectura Limpia lo consuma.</Description>
-    <VersionPrefix>0.1.12</VersionPrefix>
+    <VersionPrefix>0.1.13</VersionPrefix>
     <PackageTags>dotnet;csharp;authentication;identity;contracts;clean-architecture</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -18,10 +18,6 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl>https://aldazsoft.github.io/UserServices.Abstractions/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/aldazsoft/UserServices.Abstractions.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryBranch>main</RepositoryBranch>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

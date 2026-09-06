@@ -32,14 +32,6 @@
     </PackageReleaseNotes>
   </PropertyGroup>
 
-  <!-- El código fuente es privado. Sin metadata de repositorio en el .nuspec, que en
-       nuget.org sería un enlace muerto, y sin SourceLink, que el SDK activa por defecto
-       desde .NET 8 y apuntaría el depurador del consumidor a una URL sin acceso público. -->
-  <PropertyGroup>
-    <EnableSourceLink>false</EnableSourceLink>
-    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
-  </PropertyGroup>
-
   <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
   <ItemGroup>
     <None Include="../../LICENSE" Pack="true" PackagePath="\" Visible="false" />

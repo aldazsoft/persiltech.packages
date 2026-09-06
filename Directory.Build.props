@@ -12,4 +12,24 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <!-- Todos los paquetes salen de este monorepo, que es público, así que la metadata de
+       repositorio se declara una sola vez aquí en lugar de repetirse en cada .csproj.
+       Es lo que hace que nuget.org muestre el enlace al código fuente.
+
+       Mientras cada paquete vivía en su propio repositorio privado, esta metadata se
+       omitía y SourceLink se desactivaba a propósito: el enlace habría estado muerto y el
+       depurador del consumidor habría apuntado a una URL sin acceso. Con el repositorio
+       público ambas cosas pasan a ser una ventaja, y SourceLink queda activo — el SDK lo
+       incluye por defecto desde .NET 8 — para que quien consuma el paquete pueda entrar
+       al código fuente al depurar. -->
+  <PropertyGroup>
+    <RepositoryUrl>https://github.com/aldazsoft/persiltech.packages</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Normaliza en el PDB las rutas de la máquina que compila. Solo en CI: activarlo en
+         local rompería la depuración del propio repositorio. -->
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
 </Project>

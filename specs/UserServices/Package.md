@@ -31,8 +31,10 @@ repositoryUrl:
 # sirve si el repositorio es público y hace de página del proyecto.
 projectUrl: https://aldazsoft.github.io/UserServices/
 # true cuando el código fuente no es público: omite la metadata de repositorio del
-# .nuspec, que sería un enlace muerto, y apaga SourceLink.
-privateSource: true
+# .nuspec, que sería un enlace muerto, y apaga SourceLink. false desde que todos los
+# paquetes viven en el monorepo público: la metadata la declara Directory.Build.props
+# una sola vez, y SourceLink deja al consumidor entrar al código fuente al depurar.
+privateSource: false
 # true omite los workflows de GitHub Actions.
 noCi: false
 ---

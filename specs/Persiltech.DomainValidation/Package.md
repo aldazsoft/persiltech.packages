@@ -12,7 +12,7 @@ author: Edinson Aldaz
 company: Persiltech
 repositoryUrl:
 projectUrl: https://aldazsoft.github.io/DomainValidation/
-privateSource: true
+privateSource: false
 noCi: false
 ---
 
