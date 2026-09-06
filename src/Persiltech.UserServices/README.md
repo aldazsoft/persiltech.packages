@@ -125,6 +125,7 @@ Versión `0.x`: la superficie pública puede cambiar entre versiones menores.
 
 | Versión | Cambios                                                                                                                                                                       |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.1.5   | La dependencia de `Persiltech.UserServices.Abstractions` sube de 0.1.0 a 0.1.12: dentro del monorepo el contrato lo aporta el proyecto vecino, y `dotnet pack` declara la versión que este tiene al empaquetar. Sin cambios en la superficie pública. |
 | 0.1.4   | La dependencia mínima de `Persiltech.UserServices.Abstractions` baja de 0.1.8 a 0.1.0, la primera que ya expone el contrato implementado: instalar este paquete deja de forzar una actualización que nadie necesitaba. El README estrena este historial y retira su apartado de licencia, que nuget.org ya publica en la pestaña *License*. |
 | 0.1.3   | La insignia de licencia del README enlaza al texto real y relleno de la licencia, en lugar de a la plantilla SPDX, que muestra el año y el titular sin sustituir.              |
 | 0.1.2   | La página del paquete pasa a ser la del portafolio. El `.nuspec` deja de declarar el repositorio y se apaga SourceLink, porque el código fuente no es público.                 |
@@ -136,8 +137,8 @@ empaquetado y documentación, nunca el contrato. Actualizar es siempre seguro.
 
 ## Soporte
 
-El código fuente de este paquete no es público. Para dudas, informes de error o
-peticiones de mejora, usa la [página del paquete](https://aldazsoft.github.io/UserServices/).
+Para dudas, informes de error o peticiones de mejora abre una [incidencia](https://github.com/aldazsoft/persiltech.packages/issues).
+También puedes consultar la [página del paquete](https://aldazsoft.github.io/UserServices/).
 
 ## Apoya el desarrollo
 

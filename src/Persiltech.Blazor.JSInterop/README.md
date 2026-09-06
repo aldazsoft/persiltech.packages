@@ -197,13 +197,13 @@ argument — it defaults to `wasmLoader`.
 
 ## Version history
 
-The source code is not public, so this is the package's change log.
+The source lives in the [monorepo](https://github.com/aldazsoft/persiltech.packages); this table summarises what each published version changed.
 
 | Version | Changes |
 | ------- | ------- |
+| 1.1.2   | The `.nuspec` now declares the repository, which is public, and SourceLink is on, so consumers can step into the source while debugging. Support moves to GitHub issues. `Microsoft.JSInterop` and `Microsoft.Extensions.Logging.Abstractions` move from 10.0.9 to 10.0.11. This table no longer lists a 1.0.2 that was never published: those changes shipped in 1.1.0. **No change to the public surface.** |
 | 1.1.1   | Fixes a leak when the service is released while its first call is still importing the module — a component torn down while a JavaScript call is pending, which is what a geolocation prompt does. The reference arrived after `DisposeAsync` had already run, so it was cached on a disposed service and nobody ever released it; releasing the internal gate on the way out then failed and was reported as an error the consumer could do nothing about. The reference is now released as it arrives, and a call that outlives its service is logged as `Debug` — it is teardown, not a failure. **No change to the public surface.** The README's examples are corrected: both were missing `using Microsoft.Extensions.Logging;`, so they did not compile as printed. The constructors now document the exceptions they throw. |
-| 1.1.0   | Fixes the packaged `wasmModuleLoader.js`, which shipped **truncated** and could not be imported: anyone following the WebAssembly example got a syntax error. A failed import is no longer cached, so the next call retries instead of leaving the service dead for the rest of the scope; and an import that fails is now logged and swallowed, as the contract always promised — before, it was thrown. `DisposeAsync` tolerates a torn-down circuit. Each failure is one structured log entry, with the exception and the name of the method that was called. `WasmLoaderServiceBase` is now `abstract`, derives from `JSLoaderServiceBase`, and takes a plain `ILogger`. The dependency narrows from `Microsoft.AspNetCore.Components.Web` to `Microsoft.JSInterop` and `Microsoft.Extensions.Logging.Abstractions`. **The contract of the calls does not change**: failures are still logged and swallowed. |
-| 1.0.2   | The project website now points to the portfolio page where the package is documented. The real licence text ships inside the `.nupkg` instead of an SPDX expression. The public surface is documented with XML comments. This README's examples are corrected: they used to name a namespace that does not exist and to omit the logger the constructors require, so they could not compile. No change to the public API. |
+| 1.1.0   | Fixes the packaged `wasmModuleLoader.js`, which shipped **truncated** and could not be imported: anyone following the WebAssembly example got a syntax error. A failed import is no longer cached, so the next call retries instead of leaving the service dead for the rest of the scope; and an import that fails is now logged and swallowed, as the contract always promised — before, it was thrown. `DisposeAsync` tolerates a torn-down circuit. Each failure is one structured log entry, with the exception and the name of the method that was called. `WasmLoaderServiceBase` is now `abstract`, derives from `JSLoaderServiceBase`, and takes a plain `ILogger`. The dependency narrows from `Microsoft.AspNetCore.Components.Web` to `Microsoft.JSInterop` and `Microsoft.Extensions.Logging.Abstractions`. **The contract of the calls does not change**: failures are still logged and swallowed. The project website now points to the portfolio page where the package is documented; the real licence text ships inside the `.nupkg` instead of an SPDX expression; the public surface is documented with XML comments; and the README examples are corrected, since they named a namespace that does not exist and omitted the logger the constructors require. |
 | 1.0.0 – 1.0.1 | Initial releases of `JSLoaderServiceBase` and `WasmLoaderServiceBase`. |
 
 The contract of the calls has not changed since `1.0.0`: a failure is still logged and
@@ -214,8 +214,8 @@ recompiling. Updating is safe; a service deriving from `WasmLoaderServiceBase` n
 
 ## Support
 
-The source code of this package is not public. For questions, bug reports or feature
-requests, use the [package page](https://aldazsoft.github.io/Blazor.JSInterop/).
+For questions, bug reports or feature requests open an [issue](https://github.com/aldazsoft/persiltech.packages/issues).
+You can also see the [package page](https://aldazsoft.github.io/Blazor.JSInterop/).
 
 ## Support the development
 

@@ -90,3 +90,35 @@ builder.Services.AddScoped<IUserService, HttpContextUserService>();
 ## Estado
 
 La versión es `0.x`: la superficie pública puede cambiar entre versiones menores.
+
+## Historial de versiones
+
+El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.packages); esta tabla resume qué cambió en cada versión publicada.
+
+| Versión       | Cambios                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| 0.1.14        | Restaura el historial de versiones, el soporte y el apoyo al desarrollo, que 0.1.13 perdió al migrar el paquete al monorepo. |
+| 0.1.13        | El `.nuspec` declara el repositorio, ahora público, y se activa SourceLink: el depurador del consumidor puede entrar al código fuente. |
+| 0.1.12        | Publica la versión que la etiqueta `v0.1.12` no llegó a subir.                                     |
+| 0.1.11        | Apartado de licencia retirado; ya lo publica nuget.org.                                            |
+| 0.1.10        | Historial de versiones al día en el README.                                                        |
+| 0.1.9         | Insignia de licencia enlazada al texto real, no a la plantilla.                                    |
+| 0.1.8         | Licencia publicada como archivo dentro del paquete.                                                |
+| 0.1.7         | Metadata de empaquetado adaptada a un repositorio privado.                                         |
+| 0.1.6         | Enlace absoluto al texto de la licencia en el README.                                              |
+| 0.1.5         | Icono del paquete y documentación al día.                                                          |
+| 0.1.4         | Documentación y metadata de empaquetado al día.                                                    |
+| 0.1.0 – 0.1.3 | Primeras publicaciones de `IUserService`.                                                          |
+
+La superficie pública no ha cambiado desde `0.1.0`: todo lo publicado hasta ahora
+son cambios de documentación y de metadata del paquete.
+
+## Soporte
+
+Para dudas, informes de error o peticiones de mejora abre una [incidencia](https://github.com/aldazsoft/persiltech.packages/issues).
+También puedes consultar la [página del paquete](https://aldazsoft.github.io/UserServices.Abstractions/).
+
+## Apoya el desarrollo
+
+Si el paquete te ahorra trabajo, puedes apoyar su mantenimiento en
+[GitHub Sponsors](https://github.com/sponsors/aldazsoft).

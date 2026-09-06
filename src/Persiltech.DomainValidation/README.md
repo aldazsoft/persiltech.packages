@@ -315,7 +315,7 @@ un mensaje y nunca la clave del recurso.
 
 ## Historial de versiones
 
-El código fuente no es público, así que este es el registro de cambios del paquete.
+El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.packages); esta tabla resume qué cambió en cada versión publicada.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
@@ -358,8 +358,8 @@ canal de soporte.
 
 ## Soporte
 
-El código fuente de este paquete no es público. Para dudas, informes de error o peticiones de
-mejora, usa la [página del paquete](https://aldazsoft.github.io/DomainValidation/).
+Para dudas, informes de error o peticiones de mejora abre una [incidencia](https://github.com/aldazsoft/persiltech.packages/issues).
+También puedes consultar la [página del paquete](https://aldazsoft.github.io/DomainValidation/).
 
 ## Apoya el desarrollo
 

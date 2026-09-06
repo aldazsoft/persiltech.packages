@@ -4,7 +4,7 @@
     <PackageId>Persiltech.Blazor.JSInterop</PackageId>
     <Title>Persiltech.Blazor.JSInterop</Title>
     <Description>Base classes for Blazor components and services that load JavaScript modules and WebAssembly modules through JSInterop, disposing of them with the component.</Description>
-    <VersionPrefix>1.1.1</VersionPrefix>
+    <VersionPrefix>1.1.2</VersionPrefix>
     <PackageTags>dotnet;csharp;blazor;jsinterop;webassembly;wasm</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -25,6 +25,13 @@
 
   <PropertyGroup>
     <PackageReleaseNotes>
+      v1.1.2
+      - The .nuspec now declares the repository, which is public, and SourceLink is on: consumers can step into the source while debugging
+      - Support moves to GitHub issues now that the repository is public
+      - Microsoft.JSInterop and Microsoft.Extensions.Logging.Abstractions move from 10.0.9 to 10.0.11
+      - The version history no longer lists a 1.0.2 that was never published: those changes shipped in 1.1.0
+      - No change to the code or to the public surface
+
       v1.1.1
       - Disposing the service while its first call is still importing no longer leaks the module reference
       - The internal import gate is no longer disposed, so a call in flight does not fail on the way out

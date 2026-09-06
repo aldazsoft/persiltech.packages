@@ -176,7 +176,7 @@ Versión `0.x`: la superficie pública puede cambiar entre versiones menores.
 
 ## Historial de versiones
 
-El código fuente no es público, así que esta tabla es el registro de cambios del paquete.
+El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.packages); esta tabla resume qué cambió en cada versión publicada.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
@@ -184,7 +184,7 @@ El código fuente no es público, así que esta tabla es el registro de cambios 
 
 ## Soporte
 
-El código fuente de este paquete no es público. Para dudas, fallos o peticiones, usa la
+Para dudas, fallos o peticiones abre una [incidencia](https://github.com/aldazsoft/persiltech.packages/issues). También puedes consultar la
 [página del paquete](https://aldazsoft.github.io/Email/).
 
 ## Apoyar el desarrollo

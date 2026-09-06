@@ -168,7 +168,7 @@ public Result<Customer, Error> FindCustomer(int id)
 
 ## Version history
 
-The source code is not public, so this is the package's change log.
+The source lives in the [monorepo](https://github.com/aldazsoft/persiltech.packages); this table summarises what each published version changed.
 
 | Version | Changes |
 | ------- | ------- |
@@ -179,8 +179,8 @@ This package **supersedes `Persiltech.Result`** (singular), which is no longer m
 
 ## Support
 
-The source code of this package is not public. For questions, bug reports or feature
-requests, use the [package page](https://aldazsoft.github.io/Results/).
+For questions, bug reports or feature requests open an [issue](https://github.com/aldazsoft/persiltech.packages/issues).
+You can also see the [package page](https://aldazsoft.github.io/Results/).
 
 ## Support the development
 
