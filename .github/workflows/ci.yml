@@ -51,3 +51,10 @@ jobs:
 
       - name: Test
         run: dotnet test Persiltech.Packages.slnx --no-build --configuration Release
+
+      # specs/PublishOrder.md se genera del grafo de dependencias. Si alguien cambia un
+      # <ProjectReference> o una version y no lo regenera, el archivo miente justo cuando
+      # mas se consulta: en medio de una publicacion.
+      - name: Verify publish order
+        shell: pwsh
+        run: ./eng/New-PublishOrder.ps1 -Check

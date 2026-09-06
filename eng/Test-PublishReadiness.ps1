@@ -31,6 +31,15 @@
 
         No detecta cambios que solo alteran la implementacion sin tocar ninguna de las dos.
 
+    Comprobacion 3 - README de la casa
+        El README que viaja dentro del .nupkg —no el del arbol de trabajo— declara las tres
+        secciones de la casa, documenta la version que se va a publicar y no enlaza a los
+        repositorios por paquete anteriores al monorepo, que son privados y dan 404.
+
+        Nace de un caso real: 0.1.14 de Persiltech.UserServices.Abstractions se publico con
+        unas notas que anunciaban la restauracion del README, y el README no viajo en el
+        paquete porque el commit quedo incompleto. El workflow dio verde.
+
 .PARAMETER PackageDirectory
     Carpeta con los .nupkg a verificar. Si se omite, el script ejecuta 'dotnet pack' de la
     solucion en una carpeta temporal.
@@ -55,6 +64,9 @@
 .PARAMETER SkipContentComparison
     Omite la comprobacion 2, que descarga paquetes de nuget.org.
 
+.PARAMETER SkipReadmeChecks
+    Omite la comprobacion 3, la del README de la casa.
+
 .PARAMETER FlatContainer
     Endpoint del recurso PackageBaseAddress del feed. Cambialo para verificar contra un
     feed privado.
@@ -74,6 +86,7 @@ param(
     [string[]] $DependencyPrefix = @('Persiltech.'),
     [switch]   $IncludeExternalDependencies,
     [switch]   $SkipContentComparison,
+    [switch]   $SkipReadmeChecks,
     [string]   $FlatContainer = 'https://api.nuget.org/v3-flatcontainer'
 )
 
@@ -203,6 +216,35 @@ function Format-Dependency {
         $targetFramework = if ($_.TargetFramework) { $_.TargetFramework } else { '(sin grupo)' }
         "$targetFramework $($_.Id) $($_.VersionRange)"
     } | Sort-Object -Unique)
+}
+
+# El README que se lee es el que viaja dentro del .nupkg, no el del arbol de trabajo: es
+# lo unico que vera quien abra la ficha en nuget.org, y la diferencia entre ambos es
+# exactamente lo que se cuela cuando un commit queda incompleto.
+function Get-PackageReadme {
+    param([string] $Path)
+
+    $archive = Open-Package -Path $Path
+    try {
+        $entry = $archive.Entries |
+            Where-Object { $_.FullName -notmatch '/' -and $_.FullName -like '*.md' } |
+            Select-Object -First 1
+
+        if (-not $entry) { return $null }
+        Read-ZipEntryText -Entry $entry
+    }
+    finally { $archive.Dispose() }
+}
+
+# Secciones que todo README de la casa declara. Se aceptan los dos idiomas porque el
+# repositorio los mezcla: unos paquetes documentan en español y otros en inglés.
+function Test-ReadmeSection {
+    param([string] $Readme, [string[]] $Heading)
+
+    foreach ($candidate in $Heading) {
+        if ($Readme -match "(?im)^#{2,3}\s*$([regex]::Escape($candidate))\s*$") { return $true }
+    }
+    $false
 }
 
 # Devuelve $null cuando el identificador no existe en el feed, distinguiendo asi el caso
@@ -459,6 +501,57 @@ try {
                     $marker = if ($entry.SideIndicator -eq '=>') { 'solo local    ' } else { 'solo publicado' }
                     Write-Host "                 $marker  $($entry.InputObject)" -ForegroundColor Red
                 }
+            }
+        }
+    }
+
+    if (-not $SkipReadmeChecks) {
+        Write-Heading 'Comprobacion 3 - README de la casa'
+
+        foreach ($package in $underTest) {
+            Write-Host "  $($package.Id) $($package.Version)"
+
+            $readme = Get-PackageReadme -Path $package.Path
+            if (-not $readme) {
+                Add-Failure "el .nupkg no lleva README. Revisa <PackageReadmeFile> y que el archivo se empaquete."
+                continue
+            }
+
+            $section = @(
+                [pscustomobject]@{ Name = 'Historial de versiones'; Heading = @('Historial de versiones', 'Version history') }
+                [pscustomobject]@{ Name = 'Soporte';                Heading = @('Soporte', 'Support') }
+                [pscustomobject]@{ Name = 'Apoya el desarrollo';    Heading = @('Apoya el desarrollo', 'Support the development') }
+            )
+
+            $faulty = $false
+
+            $absent = @($section | Where-Object { -not (Test-ReadmeSection -Readme $readme -Heading $_.Heading) })
+
+            if ($absent.Count -gt 0) {
+                Add-Failure "al README del paquete le faltan secciones: $(($absent | ForEach-Object { $_.Name }) -join ', ')."
+                $faulty = $true
+            }
+
+            # La version que se publica tiene que aparecer en el historial. Es lo que
+            # delata unas notas de version que prometen algo que el README no cuenta.
+            if ((Test-ReadmeSection -Readme $readme -Heading @('Historial de versiones', 'Version history')) -and
+                $readme -notmatch [regex]::Escape($package.Version)) {
+                Add-Failure "$($package.Version) no aparece en el historial del README. Documenta la version antes de publicarla."
+                $faulty = $true
+            }
+
+            # Los repositorios por paquete anteriores al monorepo son privados: cualquier
+            # enlace a ellos es un 404 para quien lea la ficha.
+            $stale = @([regex]::Matches($readme, 'https://github\.com/aldazsoft/(?!persiltech\.packages)[A-Za-z0-9._-]+') |
+                ForEach-Object { $_.Value } | Sort-Object -Unique)
+
+            if ($stale.Count -gt 0) {
+                Add-Failure "el README enlaza a repositorios anteriores al monorepo: $($stale -join ', ')."
+                $faulty = $true
+            }
+
+            if (-not $faulty) {
+                Write-Pass 'Secciones, version documentada y enlaces correctos.'
             }
         }
     }

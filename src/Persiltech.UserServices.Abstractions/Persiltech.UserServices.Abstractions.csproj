@@ -4,7 +4,7 @@
     <PackageId>Persiltech.UserServices.Abstractions</PackageId>
     <Title>Persiltech.UserServices.Abstractions</Title>
     <Description>Define la interfaz IUserService, un Output Port que expone el estado de autenticación y la identidad del usuario actual, para que cualquier solución basada en Arquitectura Limpia lo consuma.</Description>
-    <VersionPrefix>0.1.14</VersionPrefix>
+    <VersionPrefix>0.1.15</VersionPrefix>
     <PackageTags>dotnet;csharp;authentication;identity;contracts;clean-architecture</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -25,9 +25,14 @@
 
   <PropertyGroup>
     <PackageReleaseNotes>
-      v0.1.14
-      - Restaura el historial de versiones, el soporte y el apoyo al desarrollo, que 0.1.13 perdió al migrar el paquete al monorepo
+      v0.1.15
+      - Restaura en el README el historial de versiones, el soporte y el apoyo al desarrollo, que se perdieron al migrar el paquete al monorepo
       - El soporte pasa a las incidencias de GitHub, ahora que el repositorio es público
+      - Sin cambios en el código ni en la superficie pública
+
+      v0.1.14
+      - Estrena estas notas de versión, que el paquete no declaraba
+      - Anunciaba la restauración del README, que por un commit incompleto no llegó a viajar en el paquete: llega en 0.1.15
       - Sin cambios en el código ni en la superficie pública
 
       v0.1.13

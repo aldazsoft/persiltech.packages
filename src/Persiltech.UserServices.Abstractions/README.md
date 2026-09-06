@@ -1,7 +1,7 @@
 # Persiltech.UserServices.Abstractions
 
 [![NuGet](https://img.shields.io/nuget/v/Persiltech.UserServices.Abstractions.svg)](https://www.nuget.org/packages/Persiltech.UserServices.Abstractions/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/aldazsoft/UserServices.Abstractions/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://aldazsoft.github.io/license/)
 
 Define la interfaz `IUserService`, un Output Port que expone el estado de autenticación y la identidad del usuario actual, para que cualquier solución basada en Arquitectura Limpia lo consuma.
 
@@ -97,7 +97,8 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión       | Cambios                                                                                          |
 | ------------- | ------------------------------------------------------------------------------------------------ |
-| 0.1.14        | Restaura el historial de versiones, el soporte y el apoyo al desarrollo, que 0.1.13 perdió al migrar el paquete al monorepo. |
+| 0.1.15        | Restaura en el README el historial de versiones, el soporte y el apoyo al desarrollo, que se perdieron al migrar el paquete al monorepo. El soporte pasa a las incidencias de GitHub. La insignia de licencia deja de apuntar al repositorio privado anterior, que devolvía 404, y enlaza a la página de licencia del portafolio. |
+| 0.1.14        | Estrena las notas de versión del paquete. Anunciaba la restauración de este README, que por un commit incompleto no llegó a viajar en el paquete: llega en 0.1.15. |
 | 0.1.13        | El `.nuspec` declara el repositorio, ahora público, y se activa SourceLink: el depurador del consumidor puede entrar al código fuente. |
 | 0.1.12        | Publica la versión que la etiqueta `v0.1.12` no llegó a subir.                                     |
 | 0.1.11        | Apartado de licencia retirado; ya lo publica nuget.org.                                            |
