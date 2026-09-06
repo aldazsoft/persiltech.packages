@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Persiltech.Membership/Persiltech.Membership.csproj" />
     <ProjectReference Include="../../src/Persiltech.Membership.OAuth/Persiltech.Membership.OAuth.csproj" />
+    <ProjectReference Include="../../src/Persiltech.Membership.Email/Persiltech.Membership.Email.csproj" />
   </ItemGroup>
 
   <!-- Lo que el paquete deja en manos del consumidor: el proveedor de Entity Framework
