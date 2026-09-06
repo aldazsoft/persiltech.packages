@@ -16,4 +16,5 @@ global using Persiltech.Membership.Responses;
 global using System.ComponentModel.DataAnnotations;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Security.Claims;
+global using System.Security.Cryptography;
 global using System.Text;

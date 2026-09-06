@@ -52,7 +52,7 @@
             return;
         }
 
-        await Auth.SignInAsync(result.Value.AccessToken);
+        await Auth.SignInAsync(result.Value.AccessToken, result.Value.RefreshToken);
 
         Snackbar.Add("Sesión iniciada.", Severity.Success);
         Navigation.NavigateTo(ReturnUrl ?? "profile");

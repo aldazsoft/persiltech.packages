@@ -16,13 +16,13 @@ public static class PasswordEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón base del grupo de rutas.</param>
     /// <returns>El mismo constructor de rutas, para poder encadenar.</returns>
-    public static IEndpointRouteBuilder MapPasswordEndpoints(
+    public static IEndpointRouteBuilder MapPasswordEndpoints<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern = PasswordPatternByDefault)
+        string pattern = PasswordPatternByDefault) where TUser : ApplicationUser
     {
-        endpoints.MapChangePasswordEndpoint($"{pattern}/change");
-        endpoints.MapForgotPasswordEndpoint($"{pattern}/forgot");
-        endpoints.MapResetPasswordEndpoint($"{pattern}/reset");
+        endpoints.MapChangePasswordEndpoint<TUser>($"{pattern}/change");
+        endpoints.MapForgotPasswordEndpoint<TUser>($"{pattern}/forgot");
+        endpoints.MapResetPasswordEndpoint<TUser>($"{pattern}/reset");
 
         return endpoints;
     }
@@ -37,10 +37,10 @@ public static class PasswordEndpoints
     /// No llama a <c>AllowAnonymous</c>: opera sobre la cuenta autenticada, que resuelve por
     /// <see cref="ClaimTypes.Name"/>.
     /// </remarks>
-    public static RouteHandlerBuilder MapChangePasswordEndpoint(
+    public static RouteHandlerBuilder MapChangePasswordEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, ChangePasswordAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, ChangePasswordAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -59,10 +59,10 @@ public static class PasswordEndpoints
     /// Responde <c>204</c> exista o no la cuenta, para no convertirse en un verificador de
     /// qué correos están registrados.
     /// </remarks>
-    public static RouteHandlerBuilder MapForgotPasswordEndpoint(
+    public static RouteHandlerBuilder MapForgotPasswordEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, ForgotPasswordAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, ForgotPasswordAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .WithSummary("Pedir el reinicio de la contraseña")
@@ -76,10 +76,10 @@ public static class PasswordEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón de la ruta.</param>
     /// <returns>El constructor del endpoint, para que el consumidor lo decore.</returns>
-    public static RouteHandlerBuilder MapResetPasswordEndpoint(
+    public static RouteHandlerBuilder MapResetPasswordEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, ResetPasswordAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, ResetPasswordAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .WithSummary("Reiniciar la contraseña")
@@ -87,10 +87,12 @@ public static class PasswordEndpoints
             .WithTags(MembershipTag)
             .AllowAnonymous();
 
-    private static async Task<IResult> ChangePasswordAsync(
+    private static async Task<IResult> ChangePasswordAsync<TUser>(
         ChangePasswordRequest request,
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager,
+        IRefreshTokenService refreshTokenService,
+        CancellationToken cancellationToken) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -109,16 +111,22 @@ public static class PasswordEndpoints
             request.CurrentPassword!,
             request.NewPassword!);
 
-        return result.Succeeded
-            ? Results.NoContent()
-            : Results.ValidationProblem(IdentityErrors.ToErrors(result, nameof(ChangePasswordRequest.NewPassword)));
+        if (!result.Succeeded)
+        {
+            return Results.ValidationProblem(
+                IdentityErrors.ToErrors(result, nameof(ChangePasswordRequest.NewPassword)));
+        }
+
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, cancellationToken);
+
+        return Results.NoContent();
     }
 
-    private static async Task<IResult> ForgotPasswordAsync(
+    private static async Task<IResult> ForgotPasswordAsync<TUser>(
         ForgotPasswordRequest request,
-        UserManager<ApplicationUser> userManager,
+        UserManager<TUser> userManager,
         [FromServices] IMembershipEmailSender emailSender,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -139,9 +147,11 @@ public static class PasswordEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> ResetPasswordAsync(
+    private static async Task<IResult> ResetPasswordAsync<TUser>(
         ResetPasswordRequest request,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager,
+        IRefreshTokenService refreshTokenService,
+        CancellationToken cancellationToken) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -157,11 +167,45 @@ public static class PasswordEndpoints
 
         var result = await userManager.ResetPasswordAsync(user, request.Token!, request.NewPassword!);
 
-        return result.Succeeded
-            ? Results.NoContent()
-            : Results.ValidationProblem(IdentityErrors.ToErrors(result, nameof(ResetPasswordRequest.Token)));
+        if (!result.Succeeded)
+        {
+            return Results.ValidationProblem(
+                IdentityErrors.ToErrors(result, nameof(ResetPasswordRequest.Token)));
+        }
+
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, cancellationToken);
+
+        return Results.NoContent();
     }
 
     private static readonly Dictionary<string, string[]> InvalidToken =
         new() { ["token"] = ["El testigo no es válido."] };
+
+    // Las formas sin parámetros de tipo, que son las del caso corriente: llaman a la
+    // genérica con ApplicationUser y no hacen nada distinto. Existen para que quien no
+    // extienda el usuario componga el paquete sin escribir un solo <>.
+
+    /// <inheritdoc cref="MapPasswordEndpoints{TUser}(IEndpointRouteBuilder, string)"/>
+    public static IEndpointRouteBuilder MapPasswordEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string pattern = PasswordPatternByDefault) =>
+        endpoints.MapPasswordEndpoints<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapChangePasswordEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapChangePasswordEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapChangePasswordEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapForgotPasswordEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapForgotPasswordEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapForgotPasswordEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapResetPasswordEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapResetPasswordEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapResetPasswordEndpoint<ApplicationUser>(pattern);
 }

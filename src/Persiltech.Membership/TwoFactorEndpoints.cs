@@ -25,14 +25,14 @@ public static class TwoFactorEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón base del grupo de rutas.</param>
     /// <returns>El mismo constructor de rutas, para poder encadenar.</returns>
-    public static IEndpointRouteBuilder MapTwoFactorEndpoints(
+    public static IEndpointRouteBuilder MapTwoFactorEndpoints<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern = TwoFactorPatternByDefault)
+        string pattern = TwoFactorPatternByDefault) where TUser : ApplicationUser
     {
-        endpoints.MapTwoFactorSetupEndpoint($"{pattern}/setup");
-        endpoints.MapEnableTwoFactorEndpoint($"{pattern}/enable");
-        endpoints.MapDisableTwoFactorEndpoint($"{pattern}/disable");
-        endpoints.MapTwoFactorRecoveryCodesEndpoint($"{pattern}/recovery-codes");
+        endpoints.MapTwoFactorSetupEndpoint<TUser>($"{pattern}/setup");
+        endpoints.MapEnableTwoFactorEndpoint<TUser>($"{pattern}/enable");
+        endpoints.MapDisableTwoFactorEndpoint<TUser>($"{pattern}/disable");
+        endpoints.MapTwoFactorRecoveryCodesEndpoint<TUser>($"{pattern}/recovery-codes");
 
         return endpoints;
     }
@@ -47,10 +47,10 @@ public static class TwoFactorEndpoints
     /// Genera una clave nueva en cada llamada, de modo que repetirla antes de activar el
     /// doble factor descarta la anterior.
     /// </remarks>
-    public static RouteHandlerBuilder MapTwoFactorSetupEndpoint(
+    public static RouteHandlerBuilder MapTwoFactorSetupEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, SetupAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, SetupAsync<TUser>)
             .Produces<TwoFactorSetupResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .WithSummary("Preparar el doble factor")
@@ -63,10 +63,10 @@ public static class TwoFactorEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón de la ruta.</param>
     /// <returns>El constructor del endpoint, para que el consumidor lo decore.</returns>
-    public static RouteHandlerBuilder MapEnableTwoFactorEndpoint(
+    public static RouteHandlerBuilder MapEnableTwoFactorEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, EnableAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, EnableAsync<TUser>)
             .Produces<TwoFactorRecoveryCodesResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -80,10 +80,10 @@ public static class TwoFactorEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón de la ruta.</param>
     /// <returns>El constructor del endpoint, para que el consumidor lo decore.</returns>
-    public static RouteHandlerBuilder MapDisableTwoFactorEndpoint(
+    public static RouteHandlerBuilder MapDisableTwoFactorEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, DisableAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, DisableAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -97,10 +97,10 @@ public static class TwoFactorEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón de la ruta.</param>
     /// <returns>El constructor del endpoint, para que el consumidor lo decore.</returns>
-    public static RouteHandlerBuilder MapTwoFactorRecoveryCodesEndpoint(
+    public static RouteHandlerBuilder MapTwoFactorRecoveryCodesEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, RegenerateRecoveryCodesAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, RegenerateRecoveryCodesAsync<TUser>)
             .Produces<TwoFactorRecoveryCodesResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -108,9 +108,9 @@ public static class TwoFactorEndpoints
             .WithDescription("Descarta los códigos anteriores y devuelve unos nuevos.")
             .WithTags(MembershipTag);
 
-    private static async Task<IResult> SetupAsync(
+    private static async Task<IResult> SetupAsync<TUser>(
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         var user = await CurrentUser.FindAsync(principal, userManager);
 
@@ -126,10 +126,10 @@ public static class TwoFactorEndpoints
         return Results.Ok(new TwoFactorSetupResponse(sharedKey ?? string.Empty, user.Email ?? string.Empty));
     }
 
-    private static async Task<IResult> EnableAsync(
+    private static async Task<IResult> EnableAsync<TUser>(
         EnableTwoFactorRequest request,
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -165,9 +165,9 @@ public static class TwoFactorEndpoints
         return Results.Ok(new TwoFactorRecoveryCodesResponse([.. codes ?? []]));
     }
 
-    private static async Task<IResult> DisableAsync(
+    private static async Task<IResult> DisableAsync<TUser>(
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         var user = await CurrentUser.FindAsync(principal, userManager);
 
@@ -190,9 +190,9 @@ public static class TwoFactorEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> RegenerateRecoveryCodesAsync(
+    private static async Task<IResult> RegenerateRecoveryCodesAsync<TUser>(
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         var user = await CurrentUser.FindAsync(principal, userManager);
 
@@ -214,4 +214,38 @@ public static class TwoFactorEndpoints
 
         return Results.Ok(new TwoFactorRecoveryCodesResponse([.. codes ?? []]));
     }
+
+    // Las formas sin parámetros de tipo, que son las del caso corriente: llaman a la
+    // genérica con ApplicationUser y no hacen nada distinto. Existen para que quien no
+    // extienda el usuario componga el paquete sin escribir un solo <>.
+
+    /// <inheritdoc cref="MapTwoFactorEndpoints{TUser}(IEndpointRouteBuilder, string)"/>
+    public static IEndpointRouteBuilder MapTwoFactorEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string pattern = TwoFactorPatternByDefault) =>
+        endpoints.MapTwoFactorEndpoints<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapTwoFactorSetupEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapTwoFactorSetupEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapTwoFactorSetupEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapEnableTwoFactorEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapEnableTwoFactorEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapEnableTwoFactorEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapDisableTwoFactorEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapDisableTwoFactorEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapDisableTwoFactorEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapTwoFactorRecoveryCodesEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapTwoFactorRecoveryCodesEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapTwoFactorRecoveryCodesEndpoint<ApplicationUser>(pattern);
 }

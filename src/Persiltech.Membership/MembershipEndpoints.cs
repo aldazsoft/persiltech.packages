@@ -32,13 +32,13 @@ public static class MembershipEndpoints
     /// Devuelve el constructor de rutas y no un <see cref="RouteHandlerBuilder"/> porque
     /// monta dos rutas, y ninguna de las dos representaría a la otra.
     /// </remarks>
-    public static IEndpointRouteBuilder MapMembershipEndpoints(
+    public static IEndpointRouteBuilder MapMembershipEndpoints<TUser>(
         this IEndpointRouteBuilder endpoints,
         string registrationPattern = RegistrationPatternByDefault,
-        string loginPattern = LoginPatternByDefault)
+        string loginPattern = LoginPatternByDefault) where TUser : ApplicationUser, new()
     {
-        endpoints.MapUserRegistrationEndpoint(registrationPattern);
-        endpoints.MapUserLoginEndpoint(loginPattern);
+        endpoints.MapUserRegistrationEndpoint<TUser>(registrationPattern);
+        endpoints.MapUserLoginEndpoint<TUser>(loginPattern);
 
         return endpoints;
     }
@@ -51,10 +51,10 @@ public static class MembershipEndpoints
     /// <returns>
     /// El constructor del endpoint, para que el consumidor lo decore por su cuenta.
     /// </returns>
-    public static RouteHandlerBuilder MapUserRegistrationEndpoint(
+    public static RouteHandlerBuilder MapUserRegistrationEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, RegisterUserAsync)
+        string pattern) where TUser : ApplicationUser, new() =>
+        endpoints.MapPost(pattern, RegisterUserAsync<TUser>)
             .Produces(StatusCodes.Status201Created)
             .ProducesValidationProblem()
             .WithSummary("Registrar una cuenta")
@@ -70,10 +70,10 @@ public static class MembershipEndpoints
     /// <returns>
     /// El constructor del endpoint, para que el consumidor lo decore por su cuenta.
     /// </returns>
-    public static RouteHandlerBuilder MapUserLoginEndpoint(
+    public static RouteHandlerBuilder MapUserLoginEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, LoginUserAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, LoginUserAsync<TUser>)
             .Produces<LoginUserResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .WithSummary("Autenticar a un usuario")
@@ -81,16 +81,16 @@ public static class MembershipEndpoints
             .WithTags(MembershipTag)
             .AllowAnonymous();
 
-    private static async Task<IResult> RegisterUserAsync(
+    private static async Task<IResult> RegisterUserAsync<TUser>(
         RegisterUserRequest request,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser, new()
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
             return Results.ValidationProblem(errors);
         }
 
-        var user = new ApplicationUser
+        var user = new TUser
         {
             UserName = request.Email,
             Email = request.Email,
@@ -105,11 +105,13 @@ public static class MembershipEndpoints
             : Results.ValidationProblem(ToErrors(result));
     }
 
-    private static async Task<IResult> LoginUserAsync(
+    private static async Task<IResult> LoginUserAsync<TUser>(
         LoginUserRequest request,
-        UserManager<ApplicationUser> userManager,
+        UserManager<TUser> userManager,
         IAccessTokenFactory accessTokenFactory,
-        IOptions<IdentityOptions> identityOptions)
+        IRefreshTokenService refreshTokenService,
+        IOptions<IdentityOptions> identityOptions,
+        CancellationToken cancellationToken) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -157,14 +159,16 @@ public static class MembershipEndpoints
         }
 
         var roles = await userManager.GetRolesAsync(user);
+        var refreshToken = await refreshTokenService.IssueAsync(user.Id, cancellationToken);
 
-        return Results.Ok(new LoginUserResponse(accessTokenFactory.Create(user, [.. roles])));
+        return Results.Ok(
+            new LoginUserResponse(accessTokenFactory.Create(user, [.. roles]), refreshToken));
     }
 
-    private static async Task<bool> VerifySecondFactorAsync(
-        ApplicationUser user,
+    private static async Task<bool> VerifySecondFactorAsync<TUser>(
+        TUser user,
         string? code,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         if (string.IsNullOrWhiteSpace(code))
         {
@@ -210,4 +214,27 @@ public static class MembershipEndpoints
         code.StartsWith("Password", StringComparison.Ordinal) ? "password"
         : code is "DuplicateUserName" or "DuplicateEmail" ? "email"
         : string.Empty;
+
+    // Las formas sin parámetros de tipo, que son las del caso corriente: llaman a la
+    // genérica con ApplicationUser y no hacen nada distinto. Existen para que quien no
+    // extienda el usuario componga el paquete sin escribir un solo <>.
+
+    /// <inheritdoc cref="MapMembershipEndpoints{TUser}(IEndpointRouteBuilder, string, string)"/>
+    public static IEndpointRouteBuilder MapMembershipEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string registrationPattern = RegistrationPatternByDefault,
+        string loginPattern = LoginPatternByDefault) =>
+        endpoints.MapMembershipEndpoints<ApplicationUser>(registrationPattern, loginPattern);
+
+    /// <inheritdoc cref="MapUserRegistrationEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapUserRegistrationEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapUserRegistrationEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapUserLoginEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapUserLoginEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapUserLoginEndpoint<ApplicationUser>(pattern);
 }

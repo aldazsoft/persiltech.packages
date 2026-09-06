@@ -16,6 +16,37 @@ public static class DependencyInjection
     /// Elige el proveedor de Entity Framework Core del <see cref="MembershipDbContext"/>.
     /// </param>
     /// <returns>La misma colección, para poder encadenar.</returns>
+    /// <remarks>
+    /// Es la forma corriente: llama a
+    /// <see cref="AddMembershipServices{TUser, TContext}"/> con <see cref="ApplicationUser"/>
+    /// y <see cref="MembershipDbContext"/>, y no hace nada distinto.
+    /// </remarks>
+    public static IServiceCollection AddMembershipServices(
+        this IServiceCollection services,
+        Action<JwtOptions> configureJwtOptions,
+        Action<DbContextOptionsBuilder> configureDbContext) =>
+        services.AddMembershipServices<ApplicationUser, MembershipDbContext>(
+            configureJwtOptions,
+            configureDbContext);
+
+    /// <summary>
+    /// Registra el contexto de datos, ASP.NET Core Identity y la emisión de tokens de acceso,
+    /// con el usuario y el contexto del consumidor.
+    /// </summary>
+    /// <typeparam name="TUser">
+    /// Usuario de la aplicación, derivado de <see cref="ApplicationUser"/>.
+    /// </typeparam>
+    /// <typeparam name="TContext">
+    /// Contexto de datos, derivado de <see cref="MembershipDbContext{TUser}"/>.
+    /// </typeparam>
+    /// <param name="services">Colección de servicios de la aplicación consumidora.</param>
+    /// <param name="configureJwtOptions">
+    /// Rellena las <see cref="JwtOptions"/> con las que se firma el token.
+    /// </param>
+    /// <param name="configureDbContext">
+    /// Elige el proveedor de Entity Framework Core del contexto.
+    /// </param>
+    /// <returns>La misma colección, para poder encadenar.</returns>
     /// <exception cref="ArgumentNullException">
     /// Alguno de los tres argumentos es <see langword="null"/>: sin ellos no hay ni proveedor
     /// de datos ni clave de firma, y es preferible fallar aquí que en la primera petición.
@@ -32,20 +63,28 @@ public static class DependencyInjection
     /// correo, reiniciar la contraseña, el doble factor— lanza en tiempo de ejecución,
     /// porque <c>AddIdentityCore</c> no registra ningún proveedor por su cuenta.
     /// </remarks>
-    public static IServiceCollection AddMembershipServices(
+    public static IServiceCollection AddMembershipServices<TUser, TContext>(
         this IServiceCollection services,
         Action<JwtOptions> configureJwtOptions,
         Action<DbContextOptionsBuilder> configureDbContext)
+        where TUser : ApplicationUser, new()
+        where TContext : MembershipDbContext<TUser>
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureJwtOptions);
         ArgumentNullException.ThrowIfNull(configureDbContext);
 
-        services.AddDbContext<MembershipDbContext>(configureDbContext);
+        services.AddDbContext<TContext>(configureDbContext);
 
-        services.AddIdentityCore<ApplicationUser>()
+        // El mismo contexto, resoluble además por su forma genérica: es lo que permite que
+        // los endpoints necesiten un solo parámetro de tipo en lugar de arrastrar también
+        // el del contexto hasta cada llamada del consumidor.
+        services.AddScoped<MembershipDbContext<TUser>>(
+            provider => provider.GetRequiredService<TContext>());
+
+        services.AddIdentityCore<TUser>()
             .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<MembershipDbContext>()
+            .AddEntityFrameworkStores<TContext>()
             .AddDefaultTokenProviders();
 
         services.AddOptions<JwtOptions>()
@@ -54,6 +93,7 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddSingleton<IAccessTokenFactory, JwtAccessTokenFactory>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService<TUser>>();
 
         return services;
     }

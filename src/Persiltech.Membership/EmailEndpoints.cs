@@ -19,14 +19,14 @@ public static class EmailEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón base del grupo de rutas.</param>
     /// <returns>El mismo constructor de rutas, para poder encadenar.</returns>
-    public static IEndpointRouteBuilder MapEmailEndpoints(
+    public static IEndpointRouteBuilder MapEmailEndpoints<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern = EmailPatternByDefault)
+        string pattern = EmailPatternByDefault) where TUser : ApplicationUser
     {
-        endpoints.MapSendEmailConfirmationEndpoint($"{pattern}/confirmation/send");
-        endpoints.MapConfirmEmailEndpoint($"{pattern}/confirmation");
-        endpoints.MapChangeEmailEndpoint($"{pattern}/change");
-        endpoints.MapConfirmEmailChangeEndpoint($"{pattern}/change/confirm");
+        endpoints.MapSendEmailConfirmationEndpoint<TUser>($"{pattern}/confirmation/send");
+        endpoints.MapConfirmEmailEndpoint<TUser>($"{pattern}/confirmation");
+        endpoints.MapChangeEmailEndpoint<TUser>($"{pattern}/change");
+        endpoints.MapConfirmEmailChangeEndpoint<TUser>($"{pattern}/change/confirm");
 
         return endpoints;
     }
@@ -41,10 +41,10 @@ public static class EmailEndpoints
     /// Es anónimo, porque una cuenta sin confirmar puede no poder entrar todavía. Responde
     /// <c>204</c> exista o no la cuenta, y esté o no ya confirmada.
     /// </remarks>
-    public static RouteHandlerBuilder MapSendEmailConfirmationEndpoint(
+    public static RouteHandlerBuilder MapSendEmailConfirmationEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, SendEmailConfirmationAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, SendEmailConfirmationAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .WithSummary("Reenviar la confirmación del correo")
@@ -58,10 +58,10 @@ public static class EmailEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón de la ruta.</param>
     /// <returns>El constructor del endpoint, para que el consumidor lo decore.</returns>
-    public static RouteHandlerBuilder MapConfirmEmailEndpoint(
+    public static RouteHandlerBuilder MapConfirmEmailEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, ConfirmEmailAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, ConfirmEmailAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
             .WithSummary("Confirmar el correo")
@@ -76,10 +76,10 @@ public static class EmailEndpoints
     /// <param name="pattern">Patrón de la ruta.</param>
     /// <returns>El constructor del endpoint, para que el consumidor lo decore.</returns>
     /// <remarks>El aviso va al correo <em>nuevo</em>, que es el que hay que demostrar.</remarks>
-    public static RouteHandlerBuilder MapChangeEmailEndpoint(
+    public static RouteHandlerBuilder MapChangeEmailEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, ChangeEmailAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, ChangeEmailAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -97,10 +97,10 @@ public static class EmailEndpoints
     /// Actualiza el correo y el nombre de usuario a la vez: en este paquete el correo
     /// <em>es</em> el nombre de usuario, y dejar el viejo rompería la autenticación.
     /// </remarks>
-    public static RouteHandlerBuilder MapConfirmEmailChangeEndpoint(
+    public static RouteHandlerBuilder MapConfirmEmailChangeEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPost(pattern, ConfirmEmailChangeAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPost(pattern, ConfirmEmailChangeAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -108,11 +108,11 @@ public static class EmailEndpoints
             .WithDescription("Aplica el cambio de correo con el testigo enviado al correo nuevo.")
             .WithTags(MembershipTag);
 
-    private static async Task<IResult> SendEmailConfirmationAsync(
+    private static async Task<IResult> SendEmailConfirmationAsync<TUser>(
         SendEmailConfirmationRequest request,
-        UserManager<ApplicationUser> userManager,
+        UserManager<TUser> userManager,
         [FromServices] IMembershipEmailSender emailSender,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -133,9 +133,9 @@ public static class EmailEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> ConfirmEmailAsync(
+    private static async Task<IResult> ConfirmEmailAsync<TUser>(
         ConfirmEmailRequest request,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -156,12 +156,12 @@ public static class EmailEndpoints
             : Results.ValidationProblem(IdentityErrors.ToErrors(result, nameof(ConfirmEmailRequest.Token)));
     }
 
-    private static async Task<IResult> ChangeEmailAsync(
+    private static async Task<IResult> ChangeEmailAsync<TUser>(
         ChangeEmailRequest request,
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager,
+        UserManager<TUser> userManager,
         [FromServices] IMembershipEmailSender emailSender,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -184,10 +184,10 @@ public static class EmailEndpoints
         return Results.NoContent();
     }
 
-    private static async Task<IResult> ConfirmEmailChangeAsync(
+    private static async Task<IResult> ConfirmEmailChangeAsync<TUser>(
         ConfirmEmailChangeRequest request,
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -216,4 +216,38 @@ public static class EmailEndpoints
             : Results.ValidationProblem(
                 IdentityErrors.ToErrors(renamed, nameof(ConfirmEmailChangeRequest.NewEmail)));
     }
+
+    // Las formas sin parámetros de tipo, que son las del caso corriente: llaman a la
+    // genérica con ApplicationUser y no hacen nada distinto. Existen para que quien no
+    // extienda el usuario componga el paquete sin escribir un solo <>.
+
+    /// <inheritdoc cref="MapEmailEndpoints{TUser}(IEndpointRouteBuilder, string)"/>
+    public static IEndpointRouteBuilder MapEmailEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string pattern = EmailPatternByDefault) =>
+        endpoints.MapEmailEndpoints<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapSendEmailConfirmationEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapSendEmailConfirmationEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapSendEmailConfirmationEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapConfirmEmailEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapConfirmEmailEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapConfirmEmailEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapChangeEmailEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapChangeEmailEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapChangeEmailEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapConfirmEmailChangeEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapConfirmEmailChangeEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapConfirmEmailChangeEndpoint<ApplicationUser>(pattern);
 }

@@ -8,7 +8,9 @@ public sealed record RegisterUserRequest(string Email, string Password, string F
 
 public sealed record LoginUserRequest(string Email, string Password, string? TwoFactorCode = null);
 
-public sealed record LoginUserResponse(string AccessToken);
+public sealed record LoginUserResponse(string AccessToken, string RefreshToken);
+
+public sealed record RefreshTokenRequest(string RefreshToken);
 
 public sealed record ForgotPasswordRequest(string Email);
 

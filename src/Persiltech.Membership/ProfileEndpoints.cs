@@ -15,12 +15,12 @@ public static class ProfileEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón base del grupo de rutas.</param>
     /// <returns>El mismo constructor de rutas, para poder encadenar.</returns>
-    public static IEndpointRouteBuilder MapProfileEndpoints(
+    public static IEndpointRouteBuilder MapProfileEndpoints<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern = ProfilePatternByDefault)
+        string pattern = ProfilePatternByDefault) where TUser : ApplicationUser
     {
-        endpoints.MapUpdateProfileEndpoint(pattern);
-        endpoints.MapDeleteProfileEndpoint(pattern);
+        endpoints.MapUpdateProfileEndpoint<TUser>(pattern);
+        endpoints.MapDeleteProfileEndpoint<TUser>(pattern);
 
         return endpoints;
     }
@@ -31,10 +31,10 @@ public static class ProfileEndpoints
     /// <param name="endpoints">Constructor de rutas de la aplicación consumidora.</param>
     /// <param name="pattern">Patrón de la ruta.</param>
     /// <returns>El constructor del endpoint, para que el consumidor lo decore.</returns>
-    public static RouteHandlerBuilder MapUpdateProfileEndpoint(
+    public static RouteHandlerBuilder MapUpdateProfileEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapPut(pattern, UpdateProfileAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapPut(pattern, UpdateProfileAsync<TUser>)
             .Produces<UserResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -59,10 +59,10 @@ public static class ProfileEndpoints
     /// emitido un servidor OAuth: viven en otro contexto de datos.
     /// </para>
     /// </remarks>
-    public static RouteHandlerBuilder MapDeleteProfileEndpoint(
+    public static RouteHandlerBuilder MapDeleteProfileEndpoint<TUser>(
         this IEndpointRouteBuilder endpoints,
-        string pattern) =>
-        endpoints.MapDelete(pattern, DeleteProfileAsync)
+        string pattern) where TUser : ApplicationUser =>
+        endpoints.MapDelete(pattern, DeleteProfileAsync<TUser>)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
@@ -70,10 +70,10 @@ public static class ProfileEndpoints
             .WithDescription("Borra la cuenta autenticada.")
             .WithTags(MembershipTag);
 
-    private static async Task<IResult> UpdateProfileAsync(
+    private static async Task<IResult> UpdateProfileAsync<TUser>(
         UpdateProfileRequest request,
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -109,9 +109,9 @@ public static class ProfileEndpoints
             [.. roles]));
     }
 
-    private static async Task<IResult> DeleteProfileAsync(
+    private static async Task<IResult> DeleteProfileAsync<TUser>(
         ClaimsPrincipal principal,
-        UserManager<ApplicationUser> userManager)
+        UserManager<TUser> userManager) where TUser : ApplicationUser
     {
         var user = await CurrentUser.FindAsync(principal, userManager);
 
@@ -126,4 +126,26 @@ public static class ProfileEndpoints
             ? Results.NoContent()
             : Results.ValidationProblem(IdentityErrors.ToErrors(result));
     }
+
+    // Las formas sin parámetros de tipo, que son las del caso corriente: llaman a la
+    // genérica con ApplicationUser y no hacen nada distinto. Existen para que quien no
+    // extienda el usuario componga el paquete sin escribir un solo <>.
+
+    /// <inheritdoc cref="MapProfileEndpoints{TUser}(IEndpointRouteBuilder, string)"/>
+    public static IEndpointRouteBuilder MapProfileEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string pattern = ProfilePatternByDefault) =>
+        endpoints.MapProfileEndpoints<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapUpdateProfileEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapUpdateProfileEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapUpdateProfileEndpoint<ApplicationUser>(pattern);
+
+    /// <inheritdoc cref="MapDeleteProfileEndpoint{TUser}(IEndpointRouteBuilder, string)"/>
+    public static RouteHandlerBuilder MapDeleteProfileEndpoint(
+        this IEndpointRouteBuilder endpoints,
+        string pattern) =>
+        endpoints.MapDeleteProfileEndpoint<ApplicationUser>(pattern);
 }

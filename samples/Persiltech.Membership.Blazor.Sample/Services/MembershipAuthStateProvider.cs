@@ -9,7 +9,7 @@ namespace Persiltech.Membership.Blazor.Sample.Services;
 /// obligaría a repartir la clave. Lo que se lee sirve solo para decidir qué pinta la interfaz;
 /// quien manda sobre el acceso real es la API.
 /// </remarks>
-public sealed class MembershipAuthStateProvider(TokenStore tokens) : AuthenticationStateProvider
+public sealed class MembershipAuthStateProvider(TokenStore tokens, MembershipApiClient api) : AuthenticationStateProvider
 {
     private static readonly AuthenticationState Anonymous = new(new ClaimsPrincipal(new ClaimsIdentity()));
 
@@ -25,25 +25,63 @@ public sealed class MembershipAuthStateProvider(TokenStore tokens) : Authenticat
 
         var claims = ReadClaims(token);
 
-        if (claims.Count == 0 || IsExpired(claims))
+        if (claims.Count == 0)
         {
             await tokens.ClearAsync();
 
             return Anonymous;
         }
 
+        // Un token caducado no es el final de la sesión: para eso está el testigo de
+        // renovación. Solo si la renovación falla se cierra.
+        if (IsExpired(claims))
+        {
+            claims = await RenewAsync();
+
+            if (claims.Count == 0)
+            {
+                await tokens.ClearAsync();
+
+                return Anonymous;
+            }
+        }
+
         return new AuthenticationState(
             new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt", ClaimTypes.Name, ClaimTypes.Role)));
+    }
+
+    private async Task<List<Claim>> RenewAsync()
+    {
+        var refreshToken = await tokens.GetMembershipRefreshTokenAsync();
+
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return [];
+        }
+
+        var renewed = await api.RefreshAsync(new RefreshTokenRequest(refreshToken));
+
+        if (!renewed.Succeeded || renewed.Value is null)
+        {
+            return [];
+        }
+
+        // Se guarda sin pasar por SignInAsync: ese notifica el cambio de estado, y aquí ya
+        // estamos dentro del cálculo de ese mismo estado.
+        await tokens.SetAsync(renewed.Value.AccessToken, renewed.Value.RefreshToken);
+
+        return ReadClaims(renewed.Value.AccessToken);
     }
 
     /// <summary>
     /// Avisa a la interfaz de que hay una sesión nueva.
     /// </summary>
     /// <param name="accessToken">Token recién emitido.</param>
+    /// <param name="refreshToken">Testigo con el que se renovará la sesión.</param>
     /// <returns>La tarea que representa el cambio de estado.</returns>
-    public async Task SignInAsync(string accessToken)
+    public async Task SignInAsync(string accessToken, string refreshToken)
     {
-        await tokens.SetAsync(accessToken);
+        await tokens.SetAsync(accessToken, refreshToken);
 
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
@@ -52,8 +90,19 @@ public sealed class MembershipAuthStateProvider(TokenStore tokens) : Authenticat
     /// Cierra la sesión y avisa a la interfaz.
     /// </summary>
     /// <returns>La tarea que representa el cierre.</returns>
+    /// <remarks>
+    /// Avisa primero al servidor para que revoque el testigo de renovación: borrarlo solo
+    /// del navegador lo dejaría vivo y utilizable por quien lo hubiera copiado.
+    /// </remarks>
     public async Task SignOutAsync()
     {
+        var refreshToken = await tokens.GetMembershipRefreshTokenAsync();
+
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            await api.LogoutAsync(new RefreshTokenRequest(refreshToken));
+        }
+
         await tokens.ClearAsync();
 
         NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));

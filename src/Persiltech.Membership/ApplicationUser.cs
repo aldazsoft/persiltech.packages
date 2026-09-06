@@ -8,8 +8,14 @@ namespace Persiltech.Membership;
 /// El <see cref="IdentityUser{TKey}.UserName"/> y el <see cref="IdentityUser{TKey}.Email"/>
 /// reciben ambos el correo con el que se registró la cuenta: en este paquete el correo
 /// <em>es</em> el nombre de usuario.
+/// <para>
+/// No es <c>sealed</c>: un consumidor cuyo dominio necesite más columnas en la cuenta deriva
+/// de ella y se lo dice al paquete por el parámetro de tipo de
+/// <see cref="DependencyInjection.AddMembershipServices{TUser, TContext}"/>. Esas columnas
+/// viven en <c>AspNetUsers</c>, pero el paquete no las valida ni las expone: son suyas.
+/// </para>
 /// </remarks>
-public sealed class ApplicationUser : IdentityUser
+public class ApplicationUser : IdentityUser
 {
     /// <summary>
     /// Nombre del usuario. Obligatorio, hasta 100 caracteres.

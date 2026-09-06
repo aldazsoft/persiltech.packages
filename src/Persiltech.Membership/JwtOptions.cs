@@ -40,4 +40,15 @@ public sealed class JwtOptions
     /// </summary>
     [Range(1, int.MaxValue)]
     public int ExpireInMinutes { get; set; }
+
+    /// <summary>
+    /// Días de vigencia del testigo de renovación. Obligatorio, mayor que cero.
+    /// </summary>
+    /// <remarks>
+    /// Vive aquí y no en unas opciones propias porque las dos vigencias se eligen juntas:
+    /// son los dos extremos de la misma sesión, y separarlas invitaría a configurar una y
+    /// olvidar la otra.
+    /// </remarks>
+    [Range(1, int.MaxValue)]
+    public int RefreshTokenExpireInDays { get; set; } = 14;
 }

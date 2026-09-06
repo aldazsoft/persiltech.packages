@@ -17,7 +17,7 @@ dotnet add package Persiltech.Membership
 ## El contrato
 
 ```csharp
-public sealed class ApplicationUser : IdentityUser
+public class ApplicationUser : IdentityUser
 {
     [Required]
     [MaxLength(100)]
@@ -28,8 +28,11 @@ public sealed class ApplicationUser : IdentityUser
     public string LastName { get; set; } = string.Empty;
 }
 
+public abstract class MembershipDbContext<TUser>(DbContextOptions options)
+    : IdentityDbContext<TUser>(options) where TUser : ApplicationUser;
+
 public sealed class MembershipDbContext(DbContextOptions<MembershipDbContext> options)
-    : IdentityDbContext<ApplicationUser>(options);
+    : MembershipDbContext<ApplicationUser>(options);
 
 public sealed class JwtOptions
 {
@@ -45,6 +48,9 @@ public sealed class JwtOptions
 
     [Range(1, int.MaxValue)]
     public int ExpireInMinutes { get; set; }
+
+    [Range(1, int.MaxValue)]
+    public int RefreshTokenExpireInDays { get; set; } = 14;
 }
 
 public sealed record RegisterUserRequest
@@ -61,7 +67,12 @@ public sealed record LoginUserRequest
     [Required] public string? Password { get; init; }
 }
 
-public sealed record LoginUserResponse(string AccessToken);
+public sealed record LoginUserResponse(string AccessToken, string RefreshToken);
+
+public sealed record RefreshTokenRequest
+{
+    [Required] public string? RefreshToken { get; init; }
+}
 
 public static class DependencyInjection
 {
@@ -69,6 +80,13 @@ public static class DependencyInjection
         this IServiceCollection services,
         Action<JwtOptions> configureJwtOptions,
         Action<DbContextOptionsBuilder> configureDbContext);
+
+    public static IServiceCollection AddMembershipServices<TUser, TContext>(
+        this IServiceCollection services,
+        Action<JwtOptions> configureJwtOptions,
+        Action<DbContextOptionsBuilder> configureDbContext)
+        where TUser : ApplicationUser, new()
+        where TContext : MembershipDbContext<TUser>;
 }
 
 public static class MembershipEndpoints
@@ -84,6 +102,20 @@ public static class MembershipEndpoints
     public static RouteHandlerBuilder MapUserLoginEndpoint(
         this IEndpointRouteBuilder endpoints, string pattern);
 }
+
+public static class SessionEndpoints
+{
+    public static IEndpointRouteBuilder MapSessionEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        string refreshPattern = "user/refresh",
+        string logoutPattern = "user/logout");
+
+    public static RouteHandlerBuilder MapRefreshTokenEndpoint(
+        this IEndpointRouteBuilder endpoints, string pattern);
+
+    public static RouteHandlerBuilder MapLogoutEndpoint(
+        this IEndpointRouteBuilder endpoints, string pattern);
+}
 ```
 
 Las propiedades de `RegisterUserRequest` y `LoginUserRequest` son **anulables y sin
@@ -97,6 +129,10 @@ las migraciones y para resolver `UserManager<ApplicationUser>` desde tu propio c
 anotaciones no validan peticiones: describen la columna que genera Entity Framework Core
 (`NOT NULL`, `nvarchar(100)`).
 
+`ApplicationUser` **no es `sealed`**: puedes derivar de ella para añadir tus propias columnas.
+Arriba se muestra solo la forma corriente de cada método; cada uno tiene además una forma
+genérica en `TUser`. Ver *Extender el usuario*.
+
 `JwtOptions` se valida **al arrancar la aplicación**, no en la primera petición:
 `AddMembershipServices` encadena `ValidateDataAnnotations().ValidateOnStart()`. El mínimo
 de 32 caracteres de `SecurityKey` no es arbitrario — HMAC-SHA256 exige una clave de al
@@ -107,6 +143,10 @@ emitir el primer token.
 es el atajo para el caso corriente. Devuelve el `IEndpointRouteBuilder` porque monta dos
 rutas y ninguna representaría a la otra; los métodos individuales sí devuelven el
 `RouteHandlerBuilder`, para que decores cada endpoint por separado.
+
+Los dos endpoints de `SessionEndpoints` son **anónimos**: el testigo de renovación es la
+credencial, y exigir además un token de acceso vigente haría imposible renovar justo cuando
+hace falta, que es cuando el de acceso ya caducó.
 
 ### Roles y usuarios
 
@@ -347,6 +387,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapMembershipEndpoints();
+app.MapSessionEndpoints();
 
 app.Run();
 ```
@@ -372,7 +413,8 @@ La configuración correspondiente:
     "SecurityKey": "clave-local-de-ejemplo-de-32-caracteres",
     "ValidIssuer": "https://localhost:7082",
     "ValidAudience": "mi-aplicacion",
-    "ExpireInMinutes": 30
+    "ExpireInMinutes": 30,
+    "RefreshTokenExpireInDays": 14
   }
 }
 ```
@@ -422,15 +464,36 @@ de correo**: queda utilizable de inmediato.
 { "email": "juan.perez@example.com", "password": "Passw0rd!" }
 ```
 
-| Resultado | Respuesta                                                     |
-| --------- | ------------------------------------------------------------- |
-| Correcto  | **200 OK** con `{ "accessToken": "eyJhbGciOiJIUzI1NiIs..." }` |
-| Error     | **400 Bad Request** con `ValidationProblemDetails`            |
+| Resultado | Respuesta                                                                               |
+| --------- | ---------------------------------------------------------------------------------------- |
+| Correcto  | **200 OK** con `{ "accessToken": "eyJhbGciOiJIUzI1NiIs...", "refreshToken": "9f3a1c..." }` |
+| Error     | **400 Bad Request** con `ValidationProblemDetails`                                      |
 
 El correo inexistente y la contraseña errónea comparten respuesta **exacta** —clave vacía y
 mensaje `Credenciales inválidas.`— y es deliberado: distinguirlos convertiría el endpoint en
 un verificador de qué correos están registrados. Una cuenta desactivada recibe esa misma
 respuesta.
+
+### Sesión
+
+`POST user/refresh`
+
+```json
+{ "refreshToken": "9f3a1c..." }
+```
+
+| Resultado                                   | Respuesta                                          |
+| ------------------------------------------- | -------------------------------------------------- |
+| Correcto                                    | **200 OK** con un `LoginUserResponse` completo     |
+| Campo ausente                               | **400 Bad Request** con `ValidationProblemDetails` |
+| Desconocido, caducado, consumido o revocado | **401 Unauthorized**                               |
+
+El 401 es el mismo para los cuatro casos y sin detalle en el cuerpo: distinguir «caducado»
+de «revocado» diría a quien presenta un testigo robado en qué estado está la sesión que
+atacó.
+
+`POST user/logout`, con el mismo cuerpo, responde **204 No Content** siempre —incluso ante un
+testigo que no existe—, por la misma razón por la que `password/forgot` responde siempre 204.
 
 ### Roles
 
@@ -530,6 +593,77 @@ es esa URI la que viaja literalmente en el token. Gracias a eso `User.Identity.N
 funciona sin configurar nada, porque es el `NameClaimType` que `JwtBearer` usa por defecto.
 Si esperas la reclamación corta `name`, no la vas a encontrar.
 
+## Extender el usuario
+
+Si tu dominio necesita más columnas en la cuenta —documento de identidad, fecha de
+nacimiento, zona horaria—, deriva de `ApplicationUser` y de `MembershipDbContext<TUser>`:
+
+```csharp
+public sealed class MegadUser : ApplicationUser
+{
+    public string? DocumentNumber { get; set; }
+    public DateOnly? BirthDate { get; set; }
+}
+
+public sealed class MegadDbContext(DbContextOptions<MegadDbContext> options)
+    : MembershipDbContext<MegadUser>(options);
+```
+
+y regístralo con la forma genérica:
+
+```csharp
+builder.Services.AddMembershipServices<MegadUser, MegadDbContext>(
+    jwt => builder.Configuration.GetSection("Jwt").Bind(jwt),
+    options => options.UseSqlServer(connectionString,
+        sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName)));
+
+app.MapMembershipEndpoints<MegadUser>();
+app.MapSessionEndpoints<MegadUser>();
+```
+
+Las columnas nuevas viven en **`AspNetUsers`**, no en una tabla aparte: es la misma cuenta, y
+partirla en dos obligaría a unir en cada consulta. Resuelve `UserManager<MegadUser>` desde tu
+código y las tendrás tipadas.
+
+**Cada método público tiene dos formas**, una genérica en `TUser` y otra sin parámetros de
+tipo que la llama con `ApplicationUser`. Si no necesitas extender el usuario, no escribes ni
+un `<>` y compones igual que en la 0.5.0.
+
+Lo que el paquete **no** hace por esas columnas: no las valida, no las devuelve en
+`UserResponse` y no las expone en ningún endpoint. Son tuyas, y los endpoints que las lean y
+escriban también. El paquete solo garantiza que quepan en la misma cuenta.
+
+## El testigo de renovación
+
+No es un JWT y no lleva información: son 32 bytes aleatorios en Base64 de URL. En la base de
+datos solo se guarda su **SHA-256**, así que quien consiga leer la tabla no obtiene sesiones
+utilizables.
+
+Cada renovación **consume** el testigo presentado y emite uno nuevo. Los testigos que
+descienden de un mismo inicio de sesión forman una *familia*:
+
+| Situación                | Respuesta | Efecto                                          |
+| ------------------------ | --------- | ----------------------------------------------- |
+| Testigo vigente          | 200       | Se revoca, se emite el siguiente de la familia. |
+| Desconocido o caducado   | 401       | Ninguno.                                        |
+| **Ya consumido**         | 401       | **Se revoca la familia entera.**                |
+| Cuenta bloqueada al renovar | 401    | Se revoca la familia entera.                    |
+
+La tercera fila es la razón de ser del diseño. Un testigo ya consumido solo se presenta si
+tu cliente perdió la respuesta de la rotación anterior o si alguien lo robó y lo usa en
+paralelo. No se pueden distinguir, así que se asume lo segundo y cae la familia completa: el
+legítimo vuelve a autenticarse, y el ladrón se queda sin nada. Es la recomendación de la
+*OAuth 2.0 Security Best Current Practice*.
+
+**El token de acceso sobrevive al cierre de sesión hasta su `exp`**: es inherente a un JWT
+sin estado, porque validarlo no consulta a nadie. Por eso conviene un `ExpireInMinutes`
+corto, y por eso cerrar sesión revoca la renovación, que es lo único que el servidor sí
+controla. Si necesitas revocación inmediata del token de acceso, necesitas una lista de
+revocación, y eso queda fuera del alcance de este paquete.
+
+Cambiar o reiniciar la contraseña, y desactivar una cuenta, revocan **todas** las sesiones
+del usuario.
+
 ## Migraciones
 
 El paquete **no incluye migraciones y no puede incluirlas**: son específicas del proveedor
@@ -546,6 +680,14 @@ El esquema resultante es el estándar de ASP.NET Core Identity (`AspNetUsers`, `
 `AspNetUserClaims`, `AspNetUserLogins`, `AspNetUserRoles`, `AspNetUserTokens`,
 `AspNetRoleClaims`), con `FirstName` y `LastName` añadidas a `AspNetUsers`. Las tablas de
 roles existen porque las trae `IdentityDbContext`; este paquete no las usa.
+
+Desde la 0.6.0 se le añade **`MembershipRefreshTokens`**, la única tabla que el paquete
+define por su cuenta: guarda el hash del testigo, su familia, y las fechas de emisión,
+caducidad, consumo y revocación. Si vienes de la 0.5.0, **necesitas una migración más**.
+
+El paquete no purga las filas caducadas: eso exigiría un servicio en segundo plano y una
+política de retención, y las dos son decisiones tuyas. Una fila caducada no autentica a
+nadie.
 
 ## Decisiones de diseño
 
@@ -621,6 +763,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.6.0   | Renovación y cierre de sesión (`SessionEndpoints`), con rotación del testigo y detección de reutilización. `LoginUserResponse` pasa a devolver también `refreshToken`, lo que **rompe el contrato de la 0.5.0**. Nueva tabla `MembershipRefreshTokens` y nueva opción `RefreshTokenExpireInDays`. Cambiar la contraseña y desactivar una cuenta revocan las sesiones abiertas. `ApplicationUser` deja de ser `sealed` y el paquete admite el usuario y el contexto del consumidor con `AddMembershipServices<TUser, TContext>`: cada método público gana una forma genérica, y la de siempre se conserva. |
 | 0.5.0   | Primera versión en nuget.org: registro y autenticación sobre ASP.NET Core Identity con emisión de JWT, y los endpoints de cuenta, roles, usuarios, contraseña, correo, teléfono, perfil y doble factor. |
 
 Las versiones `0.1.0` a `0.4.0` fueron internas y nunca llegaron a nuget.org; el texto de este

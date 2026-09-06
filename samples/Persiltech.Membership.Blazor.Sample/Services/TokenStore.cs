@@ -12,6 +12,7 @@ namespace Persiltech.Membership.Blazor.Sample.Services;
 public sealed class TokenStore(IJSRuntime js)
 {
     private const string Key = "persiltech.membership.accessToken";
+    private const string MembershipRefreshKey = "persiltech.membership.refreshToken";
     private const string OAuthKey = "persiltech.oauth.accessToken";
     private const string RefreshKey = "persiltech.oauth.refreshToken";
 
@@ -34,17 +35,26 @@ public sealed class TokenStore(IJSRuntime js)
     }
 
     /// <summary>
-    /// Guarda el token recién emitido.
+    /// Guarda el par de testigos recién emitido.
     /// </summary>
     /// <param name="accessToken">Token de acceso.</param>
+    /// <param name="refreshToken">Testigo con el que se renovará la sesión.</param>
     /// <returns>La tarea que representa el guardado.</returns>
-    public async ValueTask SetAsync(string accessToken)
+    public async ValueTask SetAsync(string accessToken, string refreshToken)
     {
         Cached = accessToken;
         Loaded = true;
 
         await js.InvokeVoidAsync("localStorage.setItem", Key, accessToken);
+        await js.InvokeVoidAsync("localStorage.setItem", MembershipRefreshKey, refreshToken);
     }
+
+    /// <summary>
+    /// Testigo de renovación de la sesión de Membership, si lo hay.
+    /// </summary>
+    /// <returns>El testigo guardado.</returns>
+    public ValueTask<string?> GetMembershipRefreshTokenAsync() =>
+        js.InvokeAsync<string?>("localStorage.getItem", MembershipRefreshKey);
 
     /// <summary>
     /// Token de acceso emitido por el servidor de OAuth.
@@ -92,6 +102,7 @@ public sealed class TokenStore(IJSRuntime js)
         Loaded = true;
 
         await js.InvokeVoidAsync("localStorage.removeItem", Key);
+        await js.InvokeVoidAsync("localStorage.removeItem", MembershipRefreshKey);
         await js.InvokeVoidAsync("localStorage.removeItem", OAuthKey);
         await js.InvokeVoidAsync("localStorage.removeItem", RefreshKey);
     }

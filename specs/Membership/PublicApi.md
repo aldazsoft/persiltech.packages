@@ -6,7 +6,7 @@ packageName: Persiltech.Membership
 # MAJOR.MINOR.PATCH de la próxima publicación. Es el campo que se sube para
 # preparar una nueva versión: se propaga a <VersionPrefix> del .csproj, que es
 # la versión que acaba en nuget.org.
-version: 0.5.0
+version: 0.6.0
 ---
 
 # Superficie pública
@@ -31,6 +31,38 @@ Framework Core (`NOT NULL`, `nvarchar(100)`). Sin `MaxLength`, el proveedor las 
 El `UserName` y el `Email` reciben ambos el correo con el que se registró la cuenta: en
 este paquete el correo _es_ el nombre de usuario.
 
+## Usuario extensible
+
+`ApplicationUser` deja de ser `sealed` en la 0.6.0. Un consumidor cuyo dominio necesite más
+columnas en la cuenta —documento de identidad, fecha de nacimiento, zona horaria— deriva de
+ella y se lo dice al paquete por el parámetro de tipo:
+
+```csharp
+public sealed class MegadUser : ApplicationUser
+{
+    public string? DocumentNumber { get; set; }
+    public DateOnly? BirthDate { get; set; }
+}
+
+builder.Services.AddMembershipServices<MegadUser, MegadMembershipDbContext>(...);
+```
+
+Las columnas nuevas viven en `AspNetUsers`, no en una tabla aparte: es la misma cuenta, y
+partirla en dos obligaría a unir en cada consulta y a mantener dos filas en sincronía.
+
+**Cada método público del paquete tiene dos formas**: una genérica en `TUser` y una sin
+parámetros de tipo que la llama con `ApplicationUser`. Quien no necesite extender el usuario
+no escribe ni un `<>` y compone igual que en la 0.5.0.
+
+`TUser` está restringido a `ApplicationUser` y a `new()`: lo primero garantiza que el paquete
+puede leer `FirstName` y `LastName` —que son los que emite en el token—, y lo segundo que
+puede construir la cuenta al registrarla.
+
+Lo que el paquete **no** hace por las columnas nuevas: no las valida, no las devuelve en
+`UserResponse` y no las expone en ningún endpoint. Son del consumidor, y es él quien monta
+los suyos para leerlas y escribirlas. El paquete solo garantiza que quepan en la misma
+cuenta y que `UserManager<TUser>` las resuelva.
+
 ## MembershipDbContext
 
 Contexto de datos de Identity. Clase `sealed` que hereda de
@@ -39,9 +71,24 @@ las entrega tal cual a la clase base. Se expone para que el consumidor pueda gen
 migraciones contra él.
 
 ```csharp
+public abstract class MembershipDbContext<TUser>(DbContextOptions options)
+    : IdentityDbContext<TUser>(options) where TUser : ApplicationUser;
+
 public sealed class MembershipDbContext(DbContextOptions<MembershipDbContext> options)
-    : IdentityDbContext<ApplicationUser>(options);
+    : MembershipDbContext<ApplicationUser>(options);
 ```
+
+El consumidor que extienda el usuario deriva su propio contexto:
+
+```csharp
+public sealed class MegadMembershipDbContext(DbContextOptions<MegadMembershipDbContext> options)
+    : MembershipDbContext<MegadUser>(options);
+```
+
+La base es `abstract` porque nunca se instancia por sí sola: o se usa `MembershipDbContext`,
+que es la concreción para el caso corriente, o se deriva. Toma `DbContextOptions` a secas y
+no `DbContextOptions<T>` porque el tipo cerrado lo aporta la clase derivada, que es la que
+`AddDbContext` registra.
 
 | Miembro                                                              | Descripción                                              |
 | -------------------------------------------------------------------- | -------------------------------------------------------- |
@@ -63,6 +110,11 @@ delegado `Action<JwtOptions>` de `AddMembershipServices`.
 | `string ValidIssuer { get; set; }`   | `[Required]`                    | Emisor que viaja en la reclamación `iss`. Obligatorio.                           |
 | `string ValidAudience { get; set; }` | `[Required]`                    | Audiencia que viaja en la reclamación `aud`. Obligatoria.                        |
 | `int ExpireInMinutes { get; set; }`  | `[Range(1, int.MaxValue)]`      | Minutos de vigencia del token desde su emisión. Obligatorio, mayor que cero.     |
+| `int RefreshTokenExpireInDays { get; set; }` | `[Range(1, int.MaxValue)]` | Días de vigencia del testigo de renovación. Obligatorio, mayor que cero. Por defecto 14. |
+
+`RefreshTokenExpireInDays` vive aquí y no en unas opciones propias porque las dos vigencias
+se eligen juntas: son los dos extremos de la misma sesión, y separarlas invitaría a
+configurar una y olvidar la otra.
 
 Las anotaciones de datos se validan **al arrancar la aplicación**, no en la primera petición: `AddMembershipServices` encadena `ValidateDataAnnotations().ValidateOnStart()`. Así, una violación de restricción detiene la aplicación en el arranque, que es donde el error se ve a tiempo.
 
@@ -108,9 +160,28 @@ Cuerpo de la petición de autenticación. `sealed record` con propiedades `init`
 
 Respuesta de una autenticación correcta. `sealed record` posicional.
 
-| Miembro                                 | Descripción                                      |
-| --------------------------------------- | ------------------------------------------------ |
-| `LoginUserResponse(string AccessToken)` | El JWT recién emitido. Viaja como `accessToken`. |
+| Miembro                                                       | Descripción                                                              |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `LoginUserResponse(string AccessToken, string RefreshToken)`  | El JWT recién emitido y el testigo con el que se renovará.               |
+
+Viajan como `accessToken` y `refreshToken`.
+
+Añadir el segundo componente **rompe el contrato de la 0.5.0**: quien deserializara la
+respuesta en un tipo posicional propio tiene que añadir el miembro. Es deliberado —una
+sesión sin renovación obliga a volver a pedir la contraseña cada `ExpireInMinutes`— y por
+eso la versión sube a 0.6.0.
+
+## RefreshTokenRequest
+
+Cuerpo de las peticiones de renovación y de cierre de sesión. `sealed record` con
+propiedades `init`.
+
+| Miembro                               | Anotaciones  |
+| ------------------------------------- | ------------ |
+| `string? RefreshToken { get; init; }` | `[Required]` |
+
+Anulable y sin `required`, por la misma razón que en `RegisterUserRequest`: así el campo
+ausente llega como `null` y el error sale como `ValidationProblemDetails`.
 
 ## PagedResponse&lt;T&gt;
 
@@ -297,6 +368,10 @@ paquete.
 | Miembro                                                                                                                                                                  | Descripción                                                     |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
 | `IServiceCollection AddMembershipServices(this IServiceCollection services, Action<JwtOptions> configureJwtOptions, Action<DbContextOptionsBuilder> configureDbContext)` | Registra Identity, el contexto de datos y la emisión de tokens. |
+| `IServiceCollection AddMembershipServices<TUser, TContext>(this IServiceCollection services, Action<JwtOptions> configureJwtOptions, Action<DbContextOptionsBuilder> configureDbContext)` | Lo mismo, con el usuario y el contexto del consumidor. `TUser : ApplicationUser, new()`; `TContext : MembershipDbContext<TUser>`. |
+
+La forma sin parámetros de tipo llama a la genérica con `ApplicationUser` y
+`MembershipDbContext`: no hace nada distinto.
 
 Lanza `ArgumentNullException` si `services` o cualquiera de los dos delegados es `null`:
 sin ellos no hay ni proveedor de datos ni clave de firma, y es preferible fallar aquí que
@@ -376,6 +451,20 @@ pone sobre el `RouteHandlerBuilder` que recibe.
 El `AllowAnonymous` de la tabla tampoco es decorativo: si el consumidor instala una política
 de autorización de reserva, sin esa llamada el endpoint de autenticación acabaría
 exigiendo el token que precisamente sirve para obtener, y nadie podría entrar.
+
+## SessionEndpoints
+
+Clase `static` con los métodos de extensión que montan la renovación y el cierre de sesión.
+
+| Miembro                                                                                                                                             | Descripción                                       |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `IEndpointRouteBuilder MapSessionEndpoints(this IEndpointRouteBuilder endpoints, string refreshPattern = "user/refresh", string logoutPattern = "user/logout")` | Monta los dos endpoints de una vez.               |
+| `RouteHandlerBuilder MapRefreshTokenEndpoint(this IEndpointRouteBuilder endpoints, string pattern)`                                                  | Monta `POST {pattern}` para renovar la sesión.    |
+| `RouteHandlerBuilder MapLogoutEndpoint(this IEndpointRouteBuilder endpoints, string pattern)`                                                        | Monta `POST {pattern}` para cerrar la sesión.     |
+
+Los dos son **anónimos**: el testigo de renovación es la credencial, y exigir además un
+token de acceso vigente haría imposible renovar justo cuando hace falta, que es cuando el
+de acceso ya caducó.
 
 ## RoleEndpoints
 
@@ -525,10 +614,10 @@ confirmación de correo**: la cuenta queda utilizable de inmediato.
 { "email": "juan.perez@example.com", "password": "Passw0rd!" }
 ```
 
-| Resultado | Respuesta                                                     |
-| --------- | ------------------------------------------------------------- |
-| Correcto  | **200 OK** con `{ "accessToken": "eyJhbGciOiJIUzI1NiIs..." }` |
-| Error     | **400 Bad Request** con `ValidationProblemDetails`            |
+| Resultado | Respuesta                                                                             |
+| --------- | ------------------------------------------------------------------------------------- |
+| Correcto  | **200 OK** con `{ "accessToken": "eyJhbGciOiJIUzI1NiIs...", "refreshToken": "9f3..." }` |
+| Error     | **400 Bad Request** con `ValidationProblemDetails`                                    |
 
 | Caso                                    | Clave en `errors` | Mensaje                   |
 | --------------------------------------- | ----------------- | ------------------------- |
@@ -541,6 +630,27 @@ registrados. Por la misma razón el error va en la clave vacía y no en `email` 
 `password` — señalar el campo culpable ya sería la mitad de esa filtración.
 
 Una cuenta desactivada recibe esta misma respuesta (ver _Activación de cuentas_).
+
+## Sesión
+
+`POST user/refresh` con cuerpo `application/json`:
+
+```json
+{ "refreshToken": "9f3a1c..." }
+```
+
+| Resultado                                   | Respuesta                                                    |
+| ------------------------------------------- | ------------------------------------------------------------ |
+| Correcto                                    | **200 OK** con un `LoginUserResponse` completo               |
+| Campo ausente                               | **400 Bad Request** con `ValidationProblemDetails`           |
+| Desconocido, caducado, consumido o revocado | **401 Unauthorized** con `ProblemDetails`                    |
+
+El 401 es el mismo para los cuatro casos, y sin detalle en el cuerpo: distinguir «caducado»
+de «revocado» diría a quien presenta un testigo robado en qué estado está la sesión que
+atacó.
+
+`POST user/logout`, con el mismo cuerpo, responde **204 No Content** siempre —incluso ante
+un testigo que no existe— y no devuelve cuerpo. Ver _Cierre de sesión_.
 
 ## Roles
 
@@ -617,6 +727,65 @@ consumidor sin configurar nada, porque el `NameClaimType` que `JwtBearer` usa po
 es esa misma constante. Un consumidor que espere la reclamación corta `name` no la
 encontrará.
 
+# El testigo de renovación
+
+A diferencia del de acceso, no es un JWT y no lleva información: son 32 bytes aleatorios de
+`RandomNumberGenerator`, en Base64 de URL. No hay nada que leer en él, y por eso no hace
+falta firmarlo.
+
+**En la base de datos solo se guarda su SHA-256.** Quien consiga leer la tabla no obtiene
+sesiones utilizables, del mismo modo que una tabla de contraseñas hasheadas no entrega
+cuentas. Es la diferencia con guardarlo en claro, que es lo que haría un almacén de caché
+usado a la ligera.
+
+## Rotación y detección de reutilización
+
+Cada renovación **consume** el testigo presentado y emite uno nuevo. Los testigos que
+descienden de un mismo inicio de sesión forman una *familia*, identificada por el
+`FamilyId` que hereda cada rotación.
+
+| Situación                                              | Respuesta | Efecto                                     |
+| ------------------------------------------------------ | --------- | ------------------------------------------ |
+| Testigo vigente                                        | 200       | Se revoca, se emite el siguiente de la familia. |
+| Testigo desconocido                                    | 401       | Ninguno.                                   |
+| Testigo caducado                                       | 401       | Ninguno.                                   |
+| Testigo **ya consumido**                               | 401       | **Se revoca la familia entera.**           |
+| Cuenta bloqueada o inexistente al renovar              | 401       | Se revoca la familia entera.               |
+
+La última fila de la tabla es la razón de ser del diseño. Un testigo ya consumido solo se
+presenta en dos casos: el cliente perdió la respuesta de la rotación anterior, o alguien
+robó el testigo y lo está usando en paralelo. No se pueden distinguir, así que se asume lo
+segundo y se corta la familia completa: el legítimo y el ladrón pierden la sesión, y el
+legítimo vuelve a autenticarse. Es la recomendación de la *OAuth 2.0 Security Best Current
+Practice* para clientes públicos, y es lo que el diseño anterior —que comparaba el testigo
+con el token de acceso al que se emitió— solo aproximaba.
+
+La respuesta de una renovación correcta es un `LoginUserResponse` completo: token de acceso
+nuevo **y** testigo nuevo. Devolver solo el primero dejaría al cliente con un testigo ya
+consumido.
+
+## Cierre de sesión
+
+`POST user/logout` revoca la familia entera del testigo presentado y responde **204
+siempre**, valga o no. Un 404 ante un testigo desconocido diría a quien pregunta si acertó,
+que es justo lo que se evita en `forgot` y en `confirmation/send`.
+
+**El token de acceso sobrevive al cierre de sesión hasta su `exp`.** Es inherente a un JWT
+sin estado: validarlo no consulta a nadie. Por eso `ExpireInMinutes` no debería ser
+generoso —el paquete sugiere 60 como mucho—, y por eso cerrar sesión revoca la renovación,
+que es lo único que el servidor sí controla. Un consumidor que necesite revocación
+inmediata del token de acceso necesita una lista de revocación, y eso sigue fuera del
+alcance del paquete.
+
+## Revocación por cambio de credenciales
+
+Cambiar o reiniciar la contraseña revoca **todas** las familias del usuario. Una contraseña
+se cambia, entre otras razones, porque se sospecha que alguien más la tiene; dejar vivas
+las sesiones abiertas con la anterior vaciaría el gesto de contenido.
+
+Desactivar una cuenta (ver _Activación de cuentas_) hace lo mismo, y además la renovación
+comprueba el bloqueo en cada pasada: una cuenta desactivada no puede prolongar su sesión.
+
 # Persistencia y migraciones
 
 El paquete **no incluye migraciones y no puede incluirlas**: son específicas del proveedor
@@ -646,6 +815,35 @@ El esquema resultante es el estándar de ASP.NET Core Identity (`AspNetUsers`,
 `AspNetUsers`. Las tablas de roles existen porque las trae `IdentityDbContext`; este
 paquete no las usa.
 
+A partir de la 0.6.0 se le añade **`MembershipRefreshTokens`**, que es la única tabla que el
+paquete define por su cuenta:
+
+| Columna       | Tipo               | Notas                                                        |
+| ------------- | ------------------ | ------------------------------------------------------------ |
+| `Id`          | `Guid`             | Clave primaria.                                              |
+| `UserId`      | `string`           | Clave foránea a `AspNetUsers`, en cascada. Indexada.          |
+| `TokenHash`   | `string(64)`       | SHA-256 en hexadecimal. **Índice único.**                    |
+| `FamilyId`    | `Guid`             | Agrupa las rotaciones de un mismo inicio de sesión. Indexada. |
+| `CreatedAt`   | `DateTimeOffset`   | Instante de emisión, en UTC.                                 |
+| `ExpiresAt`   | `DateTimeOffset`   | `CreatedAt` más `RefreshTokenExpireInDays`.                  |
+| `ConsumedAt`  | `DateTimeOffset?`  | Se rellena al rotarlo. `null` mientras esté sin usar.        |
+| `RevokedAt`   | `DateTimeOffset?`  | Se rellena al revocarlo. `null` mientras esté vigente.       |
+
+Se configura en `OnModelCreating`, no con un `DbSet<>` público: la entidad es interna
+(ver _Tipos internos_) y el consumidor no la nombra nunca. La ve en su migración, que es
+donde tiene que verla.
+
+El índice sobre `TokenHash` es único porque es la vía de acceso de cada renovación, y
+porque dos filas con el mismo hash serían dos sesiones indistinguibles.
+
+**El paquete no purga las filas caducadas.** Borrarlas exigiría un servicio en segundo
+plano y una política de retención, y ambas son decisiones del consumidor, que además puede
+querer conservarlas para auditar. Una fila caducada no autentica a nadie: `ExpiresAt` se
+comprueba en cada renovación.
+
+Esta tabla es nueva, así que el consumidor que venga de la 0.5.0 tiene que generar y
+aplicar una migración más.
+
 # Tipos internos
 
 No forman parte de la superficie pública, pero sí del diseño. El proyecto de pruebas los
@@ -656,6 +854,13 @@ ve gracias a `InternalsVisibleTo`.
 | `internal interface IAccessTokenFactory`      | `string Create(ApplicationUser user, IReadOnlyList<string> roles)`. Aísla la emisión del token del manejador HTTP. |
 | `internal sealed class JwtAccessTokenFactory` | Implementación sobre `JsonWebTokenHandler`. Depende de `IOptions<JwtOptions>`.                             |
 | `internal static class RequestValidation`     | Ejecuta `Validator.TryValidateObject` y devuelve el diccionario de errores con las claves ya en camelCase. |
+| `internal sealed class RefreshToken`          | La entidad de `MembershipRefreshTokens`. Se mapea en `OnModelCreating`.                                   |
+| `internal interface IRefreshTokenService`     | Emite, rota y revoca testigos de renovación. Aísla el manejador HTTP del almacén.                          |
+| `internal sealed class RefreshTokenService`   | Implementación sobre `MembershipDbContext`. `Scoped`, como el contexto del que depende.                    |
+
+`RefreshToken` es interna porque el consumidor no la nombra: no la consulta, no la escribe
+y no la recibe en ninguna respuesta. Hacerla pública ataría el esquema al contrato y
+convertiría cualquier columna nueva en un cambio de versión mayor.
 
 `JwtAccessTokenFactory` se registra como **`Singleton`**, apartándose del `Scoped` por
 defecto de las convenciones: no tiene estado y su única dependencia es
@@ -800,16 +1005,19 @@ por la misma razón: el token no lleva el identificador. Sin esa reclamación re
 
 # Fuera de alcance
 
-- Renovación y revocación de tokens: no hay _refresh token_, ni lista de revocación, ni
-  expiración deslizante. Un token vale hasta su `exp`.
+- Revocar el **token de acceso** antes de su `exp`: no hay lista de revocación. Lo que se
+  revoca es el testigo de renovación (ver _El testigo de renovación_).
+- Purgar las filas caducadas de `MembershipRefreshTokens`.
+- Expiración deslizante del testigo de renovación: la rotación emite uno nuevo con su
+  propia vigencia completa, y la familia no caduca por sí sola.
 - Permisos y políticas de autorización. El paquete administra roles y los emite en el
   token; decidir qué puede hacer cada rol es del consumidor.
 - Confirmación de correo, recuperación y cambio de contraseña, doble factor y bloqueo por
   intentos fallidos.
 - Baja de usuarios y edición de su perfil. La cuenta se desactiva, no se borra.
 - Elegir el proveedor de Entity Framework Core, generar las migraciones y aplicarlas.
-- Personalizar `ApplicationUser` o `MembershipDbContext`: ambos son `sealed`, y el paquete
-  no ofrece variantes genéricas del usuario ni del contexto.
+- Validar, exponer o devolver las columnas que el consumidor añada a su `TUser`. El paquete
+  garantiza que quepan en la cuenta; los endpoints que las lean y escriban son suyos.
 - Firmar con algoritmos asimétricos (RS256 y equivalentes) y rotar claves de firma.
 - Localizar los mensajes de error de Identity y de las anotaciones de datos.
 
@@ -820,7 +1028,7 @@ carpetas, y cada carpeta es un namespace anidado, según la regla de *AGENTS.md*
 
 | Ubicación        | Namespace                             | Contiene                                                                                                                                                    |
 | ---------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raíz             | `Persiltech.Membership`               | `DependencyInjection`, `ApplicationUser`, `MembershipDbContext`, `JwtOptions`, `MembershipAdministrator`, `MembershipSeeder` y las ocho clases `*Endpoints`. |
+| Raíz             | `Persiltech.Membership`               | `DependencyInjection`, `ApplicationUser`, `MembershipDbContext`, `JwtOptions`, `MembershipAdministrator`, `MembershipSeeder` y las nueve clases `*Endpoints`. |
 | `Requests/`      | `Persiltech.Membership.Requests`      | Los cuerpos de petición.                                                                                                                                    |
 | `Responses/`     | `Persiltech.Membership.Responses`     | Los cuerpos de respuesta.                                                                                                                                   |
 | `Notifications/` | `Persiltech.Membership.Notifications` | Los puertos de salida y sus mensajes.                                                                                                                       |

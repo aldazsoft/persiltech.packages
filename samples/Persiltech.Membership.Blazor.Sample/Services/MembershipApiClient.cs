@@ -21,6 +21,12 @@ public sealed class MembershipApiClient(HttpClient http, TokenStore tokens)
     public Task<ApiResult<LoginUserResponse>> LoginAsync(LoginUserRequest request) =>
         SendAsync<LoginUserResponse>(HttpMethod.Post, "user/login", request);
 
+    public Task<ApiResult<LoginUserResponse>> RefreshAsync(RefreshTokenRequest request) =>
+        SendAsync<LoginUserResponse>(HttpMethod.Post, "user/refresh", request);
+
+    public Task<ApiResult<object>> LogoutAsync(RefreshTokenRequest request) =>
+        SendAsync<object>(HttpMethod.Post, "user/logout", request);
+
     public Task<ApiResult<string>> WhoAmIAsync() =>
         SendAsync<string>(HttpMethod.Get, "user/me", null, raw: true);
 

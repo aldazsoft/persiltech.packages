@@ -111,6 +111,7 @@ internal sealed class MembershipApplication : IAsyncDisposable
         application.UseAuthorization();
 
         application.MapMembershipEndpoints();
+        application.MapSessionEndpoints();
         application.MapPasswordEndpoints();
         application.MapEmailEndpoints();
         application.MapPhoneNumberEndpoints();
@@ -161,7 +162,20 @@ internal sealed class MembershipApplication : IAsyncDisposable
     /// <param name="password">Contraseña de la cuenta.</param>
     /// <param name="twoFactorCode">Segundo factor, si la cuenta lo tiene activado.</param>
     /// <returns>El token de acceso recién emitido.</returns>
-    internal async Task<string> LoginAsync(string email, string password, string? twoFactorCode = null)
+    internal async Task<string> LoginAsync(string email, string password, string? twoFactorCode = null) =>
+        (await LoginWithTokensAsync(email, password, twoFactorCode)).AccessToken;
+
+    /// <summary>
+    /// Autentica una cuenta y devuelve el par de tokens completo.
+    /// </summary>
+    /// <param name="email">Correo de la cuenta.</param>
+    /// <param name="password">Contraseña de la cuenta.</param>
+    /// <param name="twoFactorCode">Segundo factor, si la cuenta lo tiene activado.</param>
+    /// <returns>El token de acceso y el testigo de renovación recién emitidos.</returns>
+    internal async Task<LoginUserResponse> LoginWithTokensAsync(
+        string email,
+        string password,
+        string? twoFactorCode = null)
     {
         var response = await Client.PostAsJsonAsync(
             "user/login",
@@ -169,9 +183,7 @@ internal sealed class MembershipApplication : IAsyncDisposable
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-        return body.GetProperty("accessToken").GetString()!;
+        return (await response.Content.ReadFromJsonAsync<LoginUserResponse>())!;
     }
 
     /// <summary>

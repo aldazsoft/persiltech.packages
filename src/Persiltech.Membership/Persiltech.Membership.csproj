@@ -4,7 +4,7 @@
     <PackageId>Persiltech.Membership</PackageId>
     <Title>Persiltech.Membership</Title>
     <Description>Sistema de membresía reutilizable para aplicaciones ASP.NET Core: registro y autenticación de usuarios sobre ASP.NET Core Identity, con endpoints de Minimal API que el consumidor monta en la ruta que elija y emisión de un JSON Web Token firmado con HMAC-SHA256.</Description>
-    <VersionPrefix>0.5.0</VersionPrefix>
+    <VersionPrefix>0.6.0</VersionPrefix>
     <PackageTags>dotnet;csharp;aspnetcore;identity;authentication;jwt;minimal-api;entity-framework-core</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
