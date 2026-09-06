@@ -1,0 +1,177 @@
+@page "/profile"
+@attribute [Authorize]
+
+<MudText Typo="Typo.h5" GutterBottom="true">Perfil</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>GET users/current</code> lee la cuenta del token; <code>PUT profile</code> actualiza el nombre;
+    <code>DELETE profile</code> la borra.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">La cuenta del token</MudText>
+
+                @if (User is null)
+                {
+                    <MudProgressLinear Indeterminate="true" />
+                }
+                else
+                {
+                    <MudSimpleTable Dense="true" Elevation="0">
+                        <tbody>
+                            <tr><td>Id</td><td><code>@User.Id</code></td></tr>
+                            <tr><td>Correo</td><td>@User.Email</td></tr>
+                            <tr><td>Nombre</td><td>@User.FirstName @User.LastName</td></tr>
+                            <tr>
+                                <td>Correo confirmado</td>
+                                <td>
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@(User.EmailConfirmed ? Color.Success : Color.Warning)">
+                                        @(User.EmailConfirmed ? "sí" : "no")
+                                    </MudChip>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Activa</td>
+                                <td>
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@(User.IsActive ? Color.Success : Color.Error)">
+                                        @(User.IsActive ? "sí" : "no")
+                                    </MudChip>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Roles</td>
+                                <td>
+                                    @if (User.Roles.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">ninguno</MudText>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var role in User.Roles)
+                                        {
+                                            <MudChip T="string" Size="Size.Small">@role</MudChip>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Text" OnClick="LoadAsync">Recargar</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true" Class="mb-4">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Actualizar el nombre</MudText>
+                <MudTextField @bind-Value="FirstName" Label="Nombre" Class="mb-3" />
+                <MudTextField @bind-Value="LastName" Label="Apellidos" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UpdateAsync">Guardar</MudButton>
+            </MudCardActions>
+        </MudCard>
+
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Darse de baja</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    Borra la cuenta y cierra la sesión. No se puede deshacer.
+                </MudText>
+            </MudCardContent>
+            <MudCardActions>
+                @if (Confirming)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAsync">
+                        Confirmar el borrado
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" OnClick="@(() => Confirming = false)">Cancelar</MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Error"
+                               OnClick="@(() => Confirming = true)">
+                        Borrar mi cuenta
+                    </MudButton>
+                }
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private MembershipAuthStateProvider Auth { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private UserResponse? User;
+    private string FirstName = string.Empty;
+    private string LastName = string.Empty;
+    private bool Confirming;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        Errors = null;
+
+        var result = await Api.GetCurrentUserAsync();
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        User = result.Value;
+        FirstName = User?.FirstName ?? string.Empty;
+        LastName = User?.LastName ?? string.Empty;
+    }
+
+    private async Task UpdateAsync()
+    {
+        Errors = null;
+
+        var result = await Api.UpdateProfileAsync(new UpdateProfileRequest(FirstName, LastName));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add("Perfil actualizado.", Severity.Success);
+
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync()
+    {
+        Confirming = false;
+
+        var result = await Api.DeleteAccountAsync();
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        await Auth.SignOutAsync();
+
+        Snackbar.Add("Cuenta borrada.", Severity.Info);
+        Navigation.NavigateTo("");
+    }
+}

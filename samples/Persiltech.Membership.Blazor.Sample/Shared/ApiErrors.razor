@@ -1,0 +1,42 @@
+@*
+    Pinta los errores tal como los devuelve el paquete. La clave vacía es la que usa para
+    lo que no pertenece a ningún campo —credenciales inválidas, sobre todo—, así que se
+    muestra sin etiqueta; el resto llevan el nombre del campo delante.
+*@
+
+@if (Errors is { Count: > 0 })
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+        <MudText Typo="Typo.subtitle2">@Title</MudText>
+        <MudList T="string" Dense="true">
+            @foreach (var entry in Errors)
+            {
+                @foreach (var message in entry.Value)
+                {
+                    <MudListItem T="string" Dense="true">
+                        @if (!string.IsNullOrEmpty(entry.Key))
+                        {
+                            <b>@entry.Key:</b>
+                            @(" ")
+                        }
+                        @message
+                    </MudListItem>
+                }
+            }
+        </MudList>
+    </MudAlert>
+}
+
+@code {
+    /// <summary>
+    /// Errores devueltos por la API, con el campo como clave.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string[]>? Errors { get; set; }
+
+    /// <summary>
+    /// Encabezado del aviso.
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = "La API rechazó la petición";
+}

@@ -1,0 +1,56 @@
+@page "/register"
+
+<MudText Typo="Typo.h5" GutterBottom="true">Crear cuenta</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>POST user/register</code> — responde 201 al crearla, o 400 con los errores por campo.
+    El correo hace de nombre de usuario.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudCard Outlined="true" Style="max-width: 520px">
+    <MudCardContent>
+        <MudTextField @bind-Value="Email" Label="Correo" InputType="InputType.Email" Class="mb-3" />
+        <MudTextField @bind-Value="Password" Label="Contraseña" InputType="InputType.Password" Class="mb-3"
+                      HelperText="La política de Identity la fija el consumidor; por defecto pide mayúscula, dígito y símbolo." />
+        <MudTextField @bind-Value="FirstName" Label="Nombre" Class="mb-3" />
+        <MudTextField @bind-Value="LastName" Label="Apellidos" />
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="Busy">
+            @(Busy ? "Creando…" : "Crear cuenta")
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private string Email = "juan.perez@example.com";
+    private string Password = "Passw0rd!";
+    private string FirstName = "Juan";
+    private string LastName = "Pérez";
+    private bool Busy;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private async Task SubmitAsync()
+    {
+        Busy = true;
+        Errors = null;
+
+        var result = await Api.RegisterAsync(new RegisterUserRequest(Email, Password, FirstName, LastName));
+
+        Busy = false;
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add($"Cuenta creada ({(int)result.StatusCode}). Ya puedes entrar.", Severity.Success);
+        Navigation.NavigateTo("login");
+    }
+}

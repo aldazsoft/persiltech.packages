@@ -1,0 +1,100 @@
+@page "/oauth/callback"
+
+<MudText Typo="Typo.h5" GutterBottom="true">Vuelta del servidor de autorización</MudText>
+
+<ApiErrors Errors="Errors" Title="El canje no salió bien" />
+
+@if (Busy)
+{
+    <MudProgressLinear Indeterminate="true" Class="my-4" />
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+        Canjeando el código por los testigos…
+    </MudText>
+}
+else if (Tokens is not null)
+{
+    <MudAlert Severity="Severity.Success" Class="mb-4">
+        Testigos emitidos por el servidor de autorización.
+    </MudAlert>
+
+    <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">
+        Este token no sustituye a la sesión de Membership: lo firma otro emisor con otra clave,
+        y el esquema JwtBearer del sample valida el del paquete base. Se guarda aparte para
+        usarlo contra <code>/connect/userinfo</code>.
+    </MudAlert>
+
+    <MudSimpleTable Dense="true" Elevation="1">
+        <tbody>
+            <tr><td>access_token</td><td>@Describe(Tokens.AccessToken)</td></tr>
+            <tr><td>id_token</td><td>@Describe(Tokens.IdToken)</td></tr>
+            <tr><td>refresh_token</td><td>@Describe(Tokens.RefreshToken)</td></tr>
+        </tbody>
+    </MudSimpleTable>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="oauth" Class="mt-4">
+        Volver a OAuth
+    </MudButton>
+}
+
+@code {
+    [Inject] private OAuthClient OAuth { get; set; } = default!;
+    [Inject] private TokenStore Store { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "code")]
+    private string? Code { get; set; }
+
+    [SupplyParameterFromQuery(Name = "error")]
+    private string? Error { get; set; }
+
+    [SupplyParameterFromQuery(Name = "error_description")]
+    private string? ErrorDescription { get; set; }
+
+    private bool Busy = true;
+    private OAuthTokens? Tokens;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(Error))
+        {
+            Busy = false;
+            Errors = new Dictionary<string, string[]>
+            {
+                [Error] = [ErrorDescription ?? "El servidor rechazó la autorización."]
+            };
+
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Code))
+        {
+            Busy = false;
+            Errors = new Dictionary<string, string[]>
+            {
+                [string.Empty] = ["La vuelta no trae código. Inicia el flujo desde la pantalla de OAuth."]
+            };
+
+            return;
+        }
+
+        var result = await OAuth.ExchangeAsync(Code);
+
+        Busy = false;
+
+        if (!result.Succeeded || result.Value?.AccessToken is null)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Tokens = result.Value;
+
+        // No sustituye la sesión de Membership: este token lo firma el servidor de OAuth,
+        // con otro emisor y otra clave, así que el JwtBearer del sample no lo acepta.
+        await Store.SetOAuthTokensAsync(result.Value.AccessToken, result.Value.RefreshToken);
+    }
+
+    // El contenido de un testigo no se pinta: basta con decir que llegó y cuánto ocupa.
+    private static string Describe(string? token) =>
+        string.IsNullOrEmpty(token) ? "(no lo entregó)" : $"recibido, {token.Length} caracteres";
+}

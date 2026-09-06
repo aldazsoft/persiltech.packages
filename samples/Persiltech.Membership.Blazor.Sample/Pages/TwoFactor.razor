@@ -1,0 +1,177 @@
+@page "/twofactor"
+@attribute [Authorize]
+
+<MudText Typo="Typo.h5" GutterBottom="true">Doble factor</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>POST twofactor/setup</code> devuelve la clave compartida para la aplicación de autenticación;
+    <code>POST twofactor/enable</code> la activa con un código válido y entrega los códigos de
+    recuperación. A partir de ahí, <code>POST user/login</code> exige el código.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true" Class="mb-4">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">1. Preparar</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                    La clave se introduce a mano en la aplicación de autenticación. El paquete no
+                    genera el código QR: la imagen es cosa del consumidor.
+                </MudText>
+
+                @if (Setup is not null)
+                {
+                    <MudTextField Value="@Setup.SharedKey" Label="Clave compartida" ReadOnly="true"
+                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                  OnAdornmentClick="CopyKeyAsync" Class="mb-2" />
+                    <MudText Typo="Typo.caption">Cuenta: @Setup.Email</MudText>
+                }
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SetupAsync">
+                    Obtener la clave
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">2. Activar</MudText>
+                <MudTextField @bind-Value="Code" Label="Código de la aplicación" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="EnableAsync">Activar</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true" Class="mb-4">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Códigos de recuperación</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                    Sirven una sola vez, para entrar si se pierde el teléfono. Regenerarlos invalida
+                    los anteriores.
+                </MudText>
+
+                @if (RecoveryCodes is { Count: > 0 })
+                {
+                    <MudChipSet T="string">
+                        @foreach (var recoveryCode in RecoveryCodes)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@recoveryCode</MudChip>
+                        }
+                    </MudChipSet>
+                }
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Text" OnClick="RegenerateAsync">Regenerar</MudButton>
+            </MudCardActions>
+        </MudCard>
+
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Desactivar</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    La autenticación vuelve a pedir solo la contraseña.
+                </MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="DisableAsync">
+                    Desactivar
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IJSRuntime Js { get; set; } = default!;
+
+    private TwoFactorSetupResponse? Setup;
+    private IReadOnlyList<string>? RecoveryCodes;
+    private string Code = string.Empty;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private async Task SetupAsync()
+    {
+        Errors = null;
+
+        var result = await Api.SetupTwoFactorAsync();
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Setup = result.Value;
+    }
+
+    private async Task CopyKeyAsync()
+    {
+        if (Setup is null)
+        {
+            return;
+        }
+
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", Setup.SharedKey);
+
+        Snackbar.Add("Clave copiada.", Severity.Info);
+    }
+
+    private async Task EnableAsync()
+    {
+        Errors = null;
+
+        var result = await Api.EnableTwoFactorAsync(new EnableTwoFactorRequest(Code));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        RecoveryCodes = result.Value?.RecoveryCodes;
+
+        Snackbar.Add("Doble factor activo. Guarda los códigos de recuperación.", Severity.Success);
+    }
+
+    private async Task RegenerateAsync()
+    {
+        Errors = null;
+
+        var result = await Api.RegenerateRecoveryCodesAsync();
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        RecoveryCodes = result.Value?.RecoveryCodes;
+
+        Snackbar.Add("Códigos regenerados. Los anteriores ya no sirven.", Severity.Warning);
+    }
+
+    private async Task DisableAsync()
+    {
+        Errors = null;
+
+        var result = await Api.DisableTwoFactorAsync();
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        RecoveryCodes = null;
+        Setup = null;
+
+        Snackbar.Add("Doble factor desactivado.", Severity.Info);
+    }
+}

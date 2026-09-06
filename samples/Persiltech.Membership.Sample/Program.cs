@@ -3,9 +3,12 @@ var builder = WebApplication.CreateBuilder(args)
     .AddMembershipOAuth()
     .AddCustomAuth()
     .AddCustomOpenApi()
-    .AddMessageSenders();
+    .AddMessageSenders()
+    .AddCustomCors();
 
 var app = builder.Build();
+
+app.UseCustomCors();
 
 app.UseAuthentication();
 app.UseAuthorization();

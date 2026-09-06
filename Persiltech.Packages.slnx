@@ -43,6 +43,7 @@
     <Project Path="samples/Persiltech.Localizer.Console.Sample/Persiltech.Localizer.Console.Sample.csproj" />
     <Project Path="samples/Persiltech.Localizer.WebApi.Sample/Persiltech.Localizer.WebApi.Sample.csproj" />
     <Project Path="samples/Persiltech.Membership.Email.Sample/Persiltech.Membership.Email.Sample.csproj" />
+    <Project Path="samples/Persiltech.Membership.Blazor.Sample/Persiltech.Membership.Blazor.Sample.csproj" />
     <Project Path="samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj" />
   </Folder>
 </Solution>

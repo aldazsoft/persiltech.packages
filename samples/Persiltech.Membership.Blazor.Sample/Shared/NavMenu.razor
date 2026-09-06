@@ -1,0 +1,34 @@
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Inicio</MudNavLink>
+
+    <AuthorizeView>
+        <NotAuthorized>
+            <MudNavGroup Title="Acceso" Icon="@Icons.Material.Filled.Login" Expanded="true">
+                <MudNavLink Href="register" Icon="@Icons.Material.Filled.PersonAdd">Crear cuenta</MudNavLink>
+                <MudNavLink Href="login" Icon="@Icons.Material.Filled.Login">Entrar</MudNavLink>
+                <MudNavLink Href="password/forgot" Icon="@Icons.Material.Filled.LockReset">Olvidé la contraseña</MudNavLink>
+                <MudNavLink Href="password/reset" Icon="@Icons.Material.Filled.Password">Reiniciar contraseña</MudNavLink>
+                <MudNavLink Href="email/confirm" Icon="@Icons.Material.Filled.MarkEmailRead">Confirmar correo</MudNavLink>
+            </MudNavGroup>
+        </NotAuthorized>
+
+        <Authorized>
+            <MudNavGroup Title="Mi cuenta" Icon="@Icons.Material.Filled.Person" Expanded="true">
+                <MudNavLink Href="profile" Icon="@Icons.Material.Filled.Badge">Perfil</MudNavLink>
+                <MudNavLink Href="password/change" Icon="@Icons.Material.Filled.Password">Cambiar contraseña</MudNavLink>
+                <MudNavLink Href="email" Icon="@Icons.Material.Filled.Email">Correo</MudNavLink>
+                <MudNavLink Href="phone" Icon="@Icons.Material.Filled.Phone">Teléfono</MudNavLink>
+                <MudNavLink Href="twofactor" Icon="@Icons.Material.Filled.Security">Doble factor</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Administración" Icon="@Icons.Material.Filled.AdminPanelSettings">
+                <MudNavLink Href="admin/roles" Icon="@Icons.Material.Filled.Label">Roles</MudNavLink>
+                <MudNavLink Href="admin/users" Icon="@Icons.Material.Filled.Group">Usuarios</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    <MudNavGroup Title="OAuth 2.0" Icon="@Icons.Material.Filled.VpnKey">
+        <MudNavLink Href="oauth" Icon="@Icons.Material.Filled.Key">Authorization Code + PKCE</MudNavLink>
+    </MudNavGroup>
+</MudNavMenu>

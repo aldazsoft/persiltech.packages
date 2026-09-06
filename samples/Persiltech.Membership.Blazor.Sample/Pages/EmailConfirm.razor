@@ -1,0 +1,76 @@
+@page "/email/confirm"
+
+<MudText Typo="Typo.h5" GutterBottom="true">Confirmar el correo</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>POST email/confirmation/send</code> reenvía el aviso —siempre 204, como el olvido de
+    contraseña— y <code>POST email/confirmation</code> lo confirma con el testigo.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Reenviar el aviso</MudText>
+                <MudTextField @bind-Value="Email" Label="Correo" InputType="InputType.Email" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SendAsync">Reenviar</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Confirmar con el testigo</MudText>
+                <MudTextField @bind-Value="Email" Label="Correo" InputType="InputType.Email" Class="mb-3" />
+                <MudTextField @bind-Value="Token" Label="Testigo" Lines="3"
+                              HelperText="Cópialo del log de la API." />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmAsync">Confirmar</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private string Email = "admin@example.com";
+    private string Token = string.Empty;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private async Task SendAsync()
+    {
+        Errors = null;
+
+        var result = await Api.SendEmailConfirmationAsync(new SendEmailConfirmationRequest(Email));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add($"La API respondió {(int)result.StatusCode}. El testigo está en el log.", Severity.Info);
+    }
+
+    private async Task ConfirmAsync()
+    {
+        Errors = null;
+
+        var result = await Api.ConfirmEmailAsync(new ConfirmEmailRequest(Email, Token));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add("Correo confirmado.", Severity.Success);
+    }
+}

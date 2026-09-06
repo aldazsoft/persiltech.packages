@@ -1,0 +1,164 @@
+@page "/admin/users"
+@attribute [Authorize]
+
+<MudText Typo="Typo.h5" GutterBottom="true">Usuarios</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>GET users/paged</code> lista con sus roles; <code>PUT users/{id}/roles</code> los sustituye
+    —la lista reemplaza a la anterior, no se suma— y <code>PUT users/{id}/status</code> activa o
+    desactiva la cuenta. Una cuenta desactivada deja de poder autenticarse.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudTable Items="Items" Dense="true" Hover="true" Loading="Busy" Elevation="1">
+    <HeaderContent>
+        <MudTh>Correo</MudTh>
+        <MudTh>Nombre</MudTh>
+        <MudTh>Correo confirmado</MudTh>
+        <MudTh>Activa</MudTh>
+        <MudTh>Roles</MudTh>
+        <MudTh Style="width: 180px">Acciones</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Correo">@context.Email</MudTd>
+        <MudTd DataLabel="Nombre">@context.FirstName @context.LastName</MudTd>
+        <MudTd DataLabel="Correo confirmado">
+            <MudChip T="string" Size="Size.Small"
+                     Color="@(context.EmailConfirmed ? Color.Success : Color.Warning)">
+                @(context.EmailConfirmed ? "sí" : "no")
+            </MudChip>
+        </MudTd>
+        <MudTd DataLabel="Activa">
+            <MudSwitch T="bool" Value="context.IsActive" Color="Color.Success"
+                       ValueChanged="@(active => ToggleAsync(context, active))" />
+        </MudTd>
+        <MudTd DataLabel="Roles">
+            @if (EditingId == context.Id)
+            {
+                <MudTextField @bind-Value="EditingRoles" Margin="Margin.Dense"
+                              HelperText="Separados por comas. La lista sustituye a la anterior." />
+            }
+            else if (context.Roles.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">ninguno</MudText>
+            }
+            else
+            {
+                @foreach (var role in context.Roles)
+                {
+                    <MudChip T="string" Size="Size.Small">@role</MudChip>
+                }
+            }
+        </MudTd>
+        <MudTd>
+            @if (EditingId == context.Id)
+            {
+                <MudButton Size="Size.Small" Color="Color.Primary"
+                           OnClick="@(() => SaveRolesAsync(context.Id))">Guardar</MudButton>
+                <MudButton Size="Size.Small" OnClick="@(() => EditingId = null)">Cancelar</MudButton>
+            }
+            else
+            {
+                <MudButton Size="Size.Small" OnClick="@(() => StartEditing(context))">Roles</MudButton>
+            }
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+<div class="d-flex justify-space-between align-center mt-4">
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+        Página @Page de @TotalPages — @TotalCount usuarios
+    </MudText>
+    <MudPagination Count="@TotalPages" Selected="@Page" SelectedChanged="OnPageChangedAsync" />
+</div>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private IReadOnlyList<UserResponse> Items = [];
+    private int Page = 1;
+    private const int PageSize = 10;
+    private int TotalCount;
+    private bool Busy;
+    private string? EditingId;
+    private string EditingRoles = string.Empty;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private int TotalPages => TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        Page = page;
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        Busy = true;
+        Errors = null;
+
+        var result = await Api.GetUsersAsync(Page, PageSize);
+
+        Busy = false;
+
+        if (!result.Succeeded || result.Value is null)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Items = result.Value.Items;
+        TotalCount = result.Value.TotalCount;
+    }
+
+    private void StartEditing(UserResponse user)
+    {
+        EditingId = user.Id;
+        EditingRoles = string.Join(", ", user.Roles);
+    }
+
+    private async Task SaveRolesAsync(string id)
+    {
+        Errors = null;
+
+        var roles = EditingRoles
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var result = await Api.AssignRolesAsync(id, new AssignRolesRequest(roles));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        EditingId = null;
+
+        Snackbar.Add("Roles actualizados. El cambio viaja en el próximo token.", Severity.Success);
+
+        await LoadAsync();
+    }
+
+    private async Task ToggleAsync(UserResponse user, bool active)
+    {
+        Errors = null;
+
+        var result = await Api.UpdateUserStatusAsync(user.Id, new UpdateUserStatusRequest(active));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add(
+            active ? "Cuenta reactivada." : "Cuenta desactivada: ya no puede autenticarse.",
+            active ? Severity.Success : Severity.Warning);
+
+        await LoadAsync();
+    }
+}

@@ -1,0 +1,60 @@
+@page "/login"
+
+<MudText Typo="Typo.h5" GutterBottom="true">Entrar</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>POST user/login</code> — devuelve el JWT. Con el doble factor activo, exige además el código.
+    Un fallo responde 400 con el mensaje en la clave vacía, igual para una contraseña mala que para un
+    correo que no existe: es deliberado, para no revelar qué cuentas hay.
+</MudText>
+
+<ApiErrors Errors="Errors" Title="No se pudo autenticar" />
+
+<MudCard Outlined="true" Style="max-width: 520px">
+    <MudCardContent>
+        <MudTextField @bind-Value="Email" Label="Correo" InputType="InputType.Email" Class="mb-3" />
+        <MudTextField @bind-Value="Password" Label="Contraseña" InputType="InputType.Password" Class="mb-3" />
+        <MudTextField @bind-Value="TwoFactorCode" Label="Código del doble factor (si lo tienes activo)" />
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="Busy">
+            @(Busy ? "Entrando…" : "Entrar")
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private MembershipAuthStateProvider Auth { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
+
+    private string Email = "admin@example.com";
+    private string Password = "Passw0rd!";
+    private string? TwoFactorCode;
+    private bool Busy;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private async Task SubmitAsync()
+    {
+        Busy = true;
+        Errors = null;
+
+        var result = await Api.LoginAsync(new LoginUserRequest(Email, Password, TwoFactorCode));
+
+        Busy = false;
+
+        if (!result.Succeeded || result.Value is null)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        await Auth.SignInAsync(result.Value.AccessToken);
+
+        Snackbar.Add("Sesión iniciada.", Severity.Success);
+        Navigation.NavigateTo(ReturnUrl ?? "profile");
+    }
+}

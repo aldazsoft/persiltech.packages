@@ -1,0 +1,9 @@
+@inject NavigationManager Navigation
+
+@code {
+    /// <summary>
+    /// Lleva al inicio de sesión conservando a dónde se quería ir, para volver después.
+    /// </summary>
+    protected override void OnInitialized() =>
+        Navigation.NavigateTo($"login?returnUrl={Uri.EscapeDataString(Navigation.Uri)}", replace: true);
+}

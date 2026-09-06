@@ -1,0 +1,77 @@
+@page "/phone"
+@attribute [Authorize]
+
+<MudText Typo="Typo.h5" GutterBottom="true">Teléfono</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>POST phone/change</code> manda el código por el puerto de SMS que implementa el consumidor
+    —en este sample, el log— y <code>POST phone/change/confirm</code> lo consuma.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Pedir el cambio</MudText>
+                <MudTextField @bind-Value="PhoneNumber" Label="Teléfono" HelperText="Por ejemplo +51987654321" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RequestAsync">Pedir</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Confirmar con el código</MudText>
+                <MudTextField @bind-Value="PhoneNumber" Label="Teléfono" Class="mb-3" />
+                <MudTextField @bind-Value="Token" Label="Código" HelperText="Cópialo del log de la API." />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmAsync">Confirmar</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private string PhoneNumber = "+51987654321";
+    private string Token = string.Empty;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private async Task RequestAsync()
+    {
+        Errors = null;
+
+        var result = await Api.ChangePhoneNumberAsync(new ChangePhoneNumberRequest(PhoneNumber));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add("Código enviado. Búscalo en el log de la API.", Severity.Info);
+    }
+
+    private async Task ConfirmAsync()
+    {
+        Errors = null;
+
+        var result = await Api.ConfirmPhoneNumberChangeAsync(
+            new ConfirmPhoneNumberChangeRequest(PhoneNumber, Token));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add("Teléfono confirmado.", Severity.Success);
+    }
+}

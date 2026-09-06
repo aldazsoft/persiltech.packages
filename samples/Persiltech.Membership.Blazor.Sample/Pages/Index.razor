@@ -1,0 +1,69 @@
+@page "/"
+
+<MudText Typo="Typo.h4" GutterBottom="true">Ejemplo de frontend para Persiltech.Membership</MudText>
+
+<MudText Class="mb-4">
+    Esta aplicación es un cliente de terceros: habla con la API por HTTP y no referencia los
+    paquetes. Lo que se demuestra es que el contrato publicado basta para construir un frontend
+    completo.
+</MudText>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Necesita la API del sample en marcha en <b>@ApiBaseAddress</b>, con CORS habilitado para este origen.
+    La cuenta sembrada es <b>admin@example.com</b> / <b>Passw0rd!</b>.
+</MudAlert>
+
+<MudGrid>
+    @foreach (var area in Areas)
+    {
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Outlined="true" Class="h-100">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">@area.Title</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@area.Description</MudText>
+                    <MudChipSet T="string" Size="Size.Small">
+                        @foreach (var endpoint in area.Endpoints)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@endpoint</MudChip>
+                        }
+                    </MudChipSet>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@area.Route">Abrir</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+
+    private string ApiBaseAddress => Configuration["ApiBaseAddress"] ?? "https://localhost:7082/";
+
+    private sealed record Area(string Title, string Description, string Route, string[] Endpoints);
+
+    private static readonly Area[] Areas =
+    [
+        new("Crear cuenta", "Alta de una cuenta nueva y los errores de validación del paquete.", "register",
+            ["POST user/register"]),
+        new("Entrar", "Autenticación, con el segundo factor cuando la cuenta lo tiene activo.", "login",
+            ["POST user/login", "GET user/me"]),
+        new("Perfil", "Leer la cuenta del token, actualizar el nombre y darse de baja.", "profile",
+            ["GET users/current", "PUT profile", "DELETE profile"]),
+        new("Contraseña", "Olvido, reinicio con testigo y cambio con la contraseña actual.", "password/change",
+            ["POST password/forgot", "POST password/reset", "POST password/change"]),
+        new("Correo", "Confirmación del correo y cambio con doble confirmación.", "email",
+            ["POST email/confirmation/send", "POST email/confirmation", "POST email/change", "POST email/change/confirm"]),
+        new("Teléfono", "Alta del teléfono y confirmación con el código por SMS.", "phone",
+            ["POST phone/change", "POST phone/change/confirm"]),
+        new("Doble factor", "Clave compartida, activación, códigos de recuperación y baja.", "twofactor",
+            ["POST twofactor/setup", "POST twofactor/enable", "POST twofactor/recovery-codes", "POST twofactor/disable"]),
+        new("Roles", "Administración de roles, paginada.", "admin/roles",
+            ["GET roles/paged", "POST roles", "PUT roles/{id}", "DELETE roles/{id}"]),
+        new("Usuarios", "Listado, asignación de roles y activación de cuentas.", "admin/users",
+            ["GET users/paged", "PUT users/{id}/roles", "PUT users/{id}/status"]),
+        new("OAuth 2.0", "Authorization Code con PKCE contra Persiltech.Membership.OAuth.", "oauth",
+            ["GET connect/authorize", "POST connect/token", "GET connect/userinfo"])
+    ];
+}

@@ -1,0 +1,170 @@
+@page "/admin/roles"
+@attribute [Authorize]
+
+<MudText Typo="Typo.h5" GutterBottom="true">Roles</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>GET roles/paged</code>, <code>POST roles</code>, <code>PUT roles/{id}</code> y
+    <code>DELETE roles/{id}</code>. El paquete monta estos endpoints sin política: es el consumidor
+    quien decide quién entra, en el sample con un <code>RequireAuthorization</code> sobre el grupo.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudCard Outlined="true" Class="mb-4">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12" sm="8">
+                <MudTextField @bind-Value="NewRoleName" Label="Nombre del rol nuevo" />
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex align-center">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync">Crear</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudTable Items="Items" Dense="true" Hover="true" Loading="Busy" Elevation="1">
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Nombre</MudTh>
+        <MudTh Style="width: 220px">Acciones</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id"><code>@context.Id</code></MudTd>
+        <MudTd DataLabel="Nombre">
+            @if (EditingId == context.Id)
+            {
+                <MudTextField @bind-Value="EditingName" Margin="Margin.Dense" />
+            }
+            else
+            {
+                @context.Name
+            }
+        </MudTd>
+        <MudTd>
+            @if (EditingId == context.Id)
+            {
+                <MudButton Size="Size.Small" Color="Color.Primary"
+                           OnClick="@(() => SaveAsync(context.Id))">Guardar</MudButton>
+                <MudButton Size="Size.Small" OnClick="@(() => EditingId = null)">Cancelar</MudButton>
+            }
+            else
+            {
+                <MudButton Size="Size.Small" OnClick="@(() => StartEditing(context))">Renombrar</MudButton>
+                <MudButton Size="Size.Small" Color="Color.Error"
+                           OnClick="@(() => DeleteAsync(context.Id))">Borrar</MudButton>
+            }
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+<div class="d-flex justify-space-between align-center mt-4">
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+        Página @Page de @TotalPages — @TotalCount roles
+    </MudText>
+    <MudPagination Count="@TotalPages" Selected="@Page" SelectedChanged="OnPageChangedAsync" />
+</div>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private IReadOnlyList<RoleResponse> Items = [];
+    private int Page = 1;
+    private const int PageSize = 10;
+    private int TotalCount;
+    private bool Busy;
+    private string NewRoleName = "Editor";
+    private string? EditingId;
+    private string EditingName = string.Empty;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private int TotalPages => TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        Page = page;
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        Busy = true;
+        Errors = null;
+
+        var result = await Api.GetRolesAsync(Page, PageSize);
+
+        Busy = false;
+
+        if (!result.Succeeded || result.Value is null)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Items = result.Value.Items;
+        TotalCount = result.Value.TotalCount;
+    }
+
+    private async Task CreateAsync()
+    {
+        Errors = null;
+
+        var result = await Api.CreateRoleAsync(new CreateRoleRequest(NewRoleName));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add($"Rol «{NewRoleName}» creado.", Severity.Success);
+
+        await LoadAsync();
+    }
+
+    private void StartEditing(RoleResponse role)
+    {
+        EditingId = role.Id;
+        EditingName = role.Name;
+    }
+
+    private async Task SaveAsync(string id)
+    {
+        Errors = null;
+
+        var result = await Api.UpdateRoleAsync(id, new UpdateRoleRequest(EditingName));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        EditingId = null;
+
+        Snackbar.Add("Rol renombrado.", Severity.Success);
+
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(string id)
+    {
+        Errors = null;
+
+        var result = await Api.DeleteRoleAsync(id);
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add("Rol borrado.", Severity.Info);
+
+        await LoadAsync();
+    }
+}

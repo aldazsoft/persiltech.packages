@@ -1,0 +1,149 @@
+@page "/oauth"
+
+<MudText Typo="Typo.h5" GutterBottom="true">Authorization Code + PKCE</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    Esta aplicación es un cliente <b>público</b>: vive en el navegador y no puede guardar un secreto,
+    porque cualquiera puede leer lo que descarga. PKCE ocupa ese lugar — se envía el resumen SHA-256 de
+    un valor al pedir el código y el valor entero al canjearlo, de modo que quien intercepte el código
+    no pueda usarlo.
+</MudText>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    El servidor exige PKCE: <code>RequireProofKeyForCodeExchange()</code>. Una petición sin desafío se
+    rechaza de plano con 400, sin llegar a redirigir.
+</MudAlert>
+
+<ApiErrors Errors="Errors" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Iniciar el flujo</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                    Genera el verificador, lo guarda en <code>sessionStorage</code> —tiene que sobrevivir
+                    a la vuelta del navegador, que recarga la aplicación entera— y sale hacia
+                    <code>/connect/authorize</code>. Si no hay sesión de navegador, el servidor te manda
+                    antes a la pantalla de inicio del consumidor.
+                </MudText>
+                <MudTextField @bind-Value="Authority" Label="Servidor de autorización" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAsync">
+                    Autorizar con OAuth
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Sesión de OAuth</MudText>
+
+                @if (string.IsNullOrEmpty(RefreshToken))
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        Todavía no hay testigos de este flujo. Inicia la autorización.
+                    </MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                        Hay un testigo de renovación guardado. Renovar pide un par nuevo sin volver a
+                        pedir credenciales; requiere el ámbito <code>offline_access</code>.
+                    </MudText>
+
+                    @if (UserInfo is { Count: > 0 })
+                    {
+                        <MudSimpleTable Dense="true" Elevation="0">
+                            <tbody>
+                                @foreach (var claim in UserInfo)
+                                {
+                                    <tr><td>@claim.Key</td><td>@claim.Value.ToString()</td></tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                }
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Text" OnClick="RefreshAsync"
+                           Disabled="@string.IsNullOrEmpty(RefreshToken)">Renovar</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="LoadUserInfoAsync">Leer userinfo</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] private OAuthClient OAuthClient { get; set; } = default!;
+    [Inject] private TokenStore Tokens { get; set; } = default!;
+    [Inject] private MembershipAuthStateProvider Auth { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+
+    private string Authority = string.Empty;
+    private string? RefreshToken;
+    private Dictionary<string, JsonElement>? UserInfo;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Authority = Configuration["ApiBaseAddress"] ?? "https://localhost:7082/";
+        RefreshToken = await Tokens.GetRefreshTokenAsync();
+    }
+
+    private Task StartAsync() => OAuthClient.StartAsync(Authority);
+
+    private async Task RefreshAsync()
+    {
+        Errors = null;
+
+        if (string.IsNullOrEmpty(RefreshToken))
+        {
+            return;
+        }
+
+        var result = await OAuthClient.RefreshAsync(RefreshToken);
+
+        if (!result.Succeeded || result.Value?.AccessToken is null)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        await Tokens.SetOAuthTokensAsync(result.Value.AccessToken, result.Value.RefreshToken);
+
+        RefreshToken = await Tokens.GetRefreshTokenAsync();
+
+        Snackbar.Add("Sesión renovada.", Severity.Success);
+    }
+
+    private async Task LoadUserInfoAsync()
+    {
+        Errors = null;
+
+        var token = await Tokens.GetOAuthTokenAsync();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Errors = new Dictionary<string, string[]>
+            {
+                [string.Empty] = ["No hay token de OAuth. Inicia el flujo de autorización primero."]
+            };
+
+            return;
+        }
+
+        var result = await OAuthClient.GetUserInfoAsync(token);
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        UserInfo = result.Value;
+    }
+}

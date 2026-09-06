@@ -1,0 +1,78 @@
+@page "/email"
+@attribute [Authorize]
+
+<MudText Typo="Typo.h5" GutterBottom="true">Cambiar el correo</MudText>
+<MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+    <code>POST email/change</code> pide el cambio y manda el aviso al <b>correo nuevo</b>, no al viejo;
+    <code>POST email/change/confirm</code> lo consuma. Aquí el correo <em>es</em> el nombre de usuario,
+    así que confirmarlo mueve los dos y la siguiente autenticación va con el nuevo.
+</MudText>
+
+<ApiErrors Errors="Errors" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Pedir el cambio</MudText>
+                <MudTextField @bind-Value="NewEmail" Label="Correo nuevo" InputType="InputType.Email" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RequestAsync">Pedir</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudCard Outlined="true">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" GutterBottom="true">Confirmar el cambio</MudText>
+                <MudTextField @bind-Value="NewEmail" Label="Correo nuevo" InputType="InputType.Email" Class="mb-3" />
+                <MudTextField @bind-Value="Token" Label="Testigo" Lines="3"
+                              HelperText="Cópialo del log de la API." />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmAsync">Confirmar</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private string NewEmail = "juan.nuevo@example.com";
+    private string Token = string.Empty;
+    private IReadOnlyDictionary<string, string[]>? Errors;
+
+    private async Task RequestAsync()
+    {
+        Errors = null;
+
+        var result = await Api.ChangeEmailAsync(new ChangeEmailRequest(NewEmail));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add("Aviso enviado al correo nuevo. El testigo está en el log.", Severity.Info);
+    }
+
+    private async Task ConfirmAsync()
+    {
+        Errors = null;
+
+        var result = await Api.ConfirmEmailChangeAsync(new ConfirmEmailChangeRequest(NewEmail, Token));
+
+        if (!result.Succeeded)
+        {
+            Errors = result.Errors;
+            return;
+        }
+
+        Snackbar.Add("Correo cambiado. El nombre de usuario también: entra con el nuevo.", Severity.Success);
+    }
+}
