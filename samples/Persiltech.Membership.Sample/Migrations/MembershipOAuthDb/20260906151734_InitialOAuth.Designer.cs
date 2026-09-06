@@ -12,7 +12,7 @@ using Persiltech.Membership.OAuth;
 namespace Persiltech.Membership.Sample.Migrations.MembershipOAuthDb
 {
     [DbContext(typeof(MembershipOAuthDbContext))]
-    [Migration("20260823190400_InitialOAuth")]
+    [Migration("20260906151734_InitialOAuth")]
     partial class InitialOAuth
     {
         /// <inheritdoc />

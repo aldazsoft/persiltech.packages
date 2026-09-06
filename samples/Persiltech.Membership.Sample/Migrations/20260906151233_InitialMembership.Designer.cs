@@ -12,7 +12,7 @@ using Persiltech.Membership;
 namespace Persiltech.Membership.Sample.Migrations
 {
     [DbContext(typeof(MembershipDbContext))]
-    [Migration("20260818014443_InitialMembership")]
+    [Migration("20260906151233_InitialMembership")]
     partial class InitialMembership
     {
         /// <inheritdoc />
