@@ -1,0 +1,9 @@
+global using Microsoft.AspNetCore.Components;
+global using Microsoft.AspNetCore.Components.Authorization;
+global using Microsoft.Extensions.DependencyInjection;
+global using MudBlazor;
+global using Persiltech.Membership.Blazor.Contracts;
+global using System.ComponentModel.DataAnnotations;
+global using System.Net;
+global using System.Net.Http.Json;
+global using System.Security.Claims;

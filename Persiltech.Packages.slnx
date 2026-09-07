@@ -26,6 +26,7 @@
     <Project Path="src/Persiltech.Results/Persiltech.Results.csproj" />
     <Project Path="src/Persiltech.UserServices.Abstractions/Persiltech.UserServices.Abstractions.csproj" />
     <Project Path="src/Persiltech.UserServices/Persiltech.UserServices.csproj" />
+    <Project Path="src/Persiltech.Membership.Blazor/Persiltech.Membership.Blazor.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Persiltech.Blazor.JSInterop.Tests/Persiltech.Blazor.JSInterop.Tests.csproj" />
@@ -36,6 +37,7 @@
     <Project Path="tests/Persiltech.Membership.Tests/Persiltech.Membership.Tests.csproj" />
     <Project Path="tests/Persiltech.Results.Tests/Persiltech.Results.Tests.csproj" />
     <Project Path="tests/Persiltech.UserServices.Tests/Persiltech.UserServices.Tests.csproj" />
+    <Project Path="tests/Persiltech.Membership.Blazor.Tests/Persiltech.Membership.Blazor.Tests.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Persiltech.Blazor.JSInterop.Sample/Persiltech.Blazor.JSInterop.Sample.csproj" />
