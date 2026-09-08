@@ -38,7 +38,7 @@ else if (Tokens is not null)
 
 @code {
     [Inject] private OAuthClient OAuth { get; set; } = default!;
-    [Inject] private TokenStore Store { get; set; } = default!;
+    [Inject] private OAuthTokenStore Store { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "code")]
     private string? Code { get; set; }

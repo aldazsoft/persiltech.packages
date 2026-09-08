@@ -58,20 +58,41 @@ public sealed class ApiResult<T>
         new(value, null, statusCode);
 
     /// <summary>
-    /// Construye el resultado de una llamada fallida.
+    /// Construye el resultado de una llamada fallida a partir de los errores por campo.
     /// </summary>
-    /// <param name="errors">Errores por campo.</param>
+    /// <param name="errors">Errores por campo, tal como los devolvió la API.</param>
     /// <param name="statusCode">Código de estado que devolvió la API.</param>
     /// <returns>El resultado.</returns>
     /// <remarks>
-    /// Si <paramref name="errors"/> llega vacío se sustituye por un error sin campo: un
-    /// resultado fallido sin ningún mensaje se comportaría como uno correcto, porque
+    /// Si <paramref name="errors"/> llega vacío se sustituye por un mensaje de reserva: un
+    /// resultado fallido sin ningún error se comportaría como uno correcto, porque
     /// <see cref="Succeeded"/> se calcula a partir de ellos.
     /// </remarks>
     public static ApiResult<T> Failure(
-        IReadOnlyDictionary<string, string[]>? errors,
+        IReadOnlyDictionary<string, string[]> errors,
         HttpStatusCode statusCode) =>
-        new(default, errors is null || errors.Count == 0 ? FallbackFor(statusCode) : errors, statusCode);
+        new(default, errors.Count == 0 ? FallbackFor(statusCode) : errors, statusCode);
+
+    /// <summary>
+    /// Construye el resultado de una llamada fallida de la que solo se conoce el código.
+    /// </summary>
+    /// <param name="statusCode">Código de estado que devolvió la API.</param>
+    /// <returns>El resultado, con un mensaje de reserva que nombra ese código.</returns>
+    public static ApiResult<T> Failure(HttpStatusCode statusCode) =>
+        new(default, FallbackFor(statusCode), statusCode);
+
+    /// <summary>
+    /// Construye el resultado de una llamada fallida con un único mensaje sin campo.
+    /// </summary>
+    /// <param name="message">Qué salió mal.</param>
+    /// <param name="statusCode">Código de estado que devolvió la API.</param>
+    /// <returns>El resultado.</returns>
+    /// <remarks>
+    /// Para los fallos que no vienen de la validación de un formulario —la API apagada, un
+    /// origen sin CORS—, donde no hay campo al que apuntar.
+    /// </remarks>
+    public static ApiResult<T> Failure(string message, HttpStatusCode statusCode) =>
+        new(default, new Dictionary<string, string[]> { [string.Empty] = [message] }, statusCode);
 
     private static IReadOnlyDictionary<string, string[]> FallbackFor(HttpStatusCode statusCode) =>
         new Dictionary<string, string[]>

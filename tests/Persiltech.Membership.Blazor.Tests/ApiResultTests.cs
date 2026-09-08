@@ -63,7 +63,7 @@ public sealed class ApiResultTests
     {
         // Succeeded se calcula a partir de los errores, así que un fallo sin ninguno se
         // comportaría como correcto. De ahí el mensaje de reserva.
-        var result = ApiResult<string>.Failure(null, statusCode);
+        var result = ApiResult<string>.Failure(statusCode);
 
         Assert.False(result.Succeeded);
         Assert.Single(result.Errors);

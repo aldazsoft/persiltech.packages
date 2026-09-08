@@ -9,23 +9,14 @@ namespace Persiltech.Membership.Blazor.Sample.Services;
 /// ValidationProblemDetails llegue a la pantalla con sus campos en lugar de como una
 /// excepción sin contexto.
 /// </remarks>
-public sealed class MembershipApiClient(HttpClient http, TokenStore tokens)
+public sealed class SampleApiClient(HttpClient http)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     // --- Cuenta -------------------------------------------------------------
 
-    public Task<ApiResult<object>> RegisterAsync(RegisterUserRequest request) =>
-        SendAsync<object>(HttpMethod.Post, "user/register", request);
-
-    public Task<ApiResult<LoginUserResponse>> LoginAsync(LoginUserRequest request) =>
-        SendAsync<LoginUserResponse>(HttpMethod.Post, "user/login", request);
-
-    public Task<ApiResult<LoginUserResponse>> RefreshAsync(RefreshTokenRequest request) =>
-        SendAsync<LoginUserResponse>(HttpMethod.Post, "user/refresh", request);
-
-    public Task<ApiResult<object>> LogoutAsync(RefreshTokenRequest request) =>
-        SendAsync<object>(HttpMethod.Post, "user/logout", request);
+    // El registro, la autenticacion, la renovacion y el cierre de sesion los aporta el
+    // paquete: aqui solo queda lo que en la 0.1.0 todavia no cubre.
 
     public Task<ApiResult<string>> WhoAmIAsync() =>
         SendAsync<string>(HttpMethod.Get, "user/me", null, raw: true);
@@ -132,13 +123,6 @@ public sealed class MembershipApiClient(HttpClient http, TokenStore tokens)
         if (body is not null)
         {
             request.Content = JsonContent.Create(body, options: Json);
-        }
-
-        var token = await tokens.GetAsync();
-
-        if (!string.IsNullOrEmpty(token))
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
         HttpResponseMessage response;

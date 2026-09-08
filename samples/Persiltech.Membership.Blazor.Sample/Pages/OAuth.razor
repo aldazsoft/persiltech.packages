@@ -78,8 +78,8 @@
 
 @code {
     [Inject] private OAuthClient OAuthClient { get; set; } = default!;
-    [Inject] private TokenStore Tokens { get; set; } = default!;
-    [Inject] private MembershipAuthStateProvider Auth { get; set; } = default!;
+    [Inject] private OAuthTokenStore Tokens { get; set; } = default!;
+    [Inject] private MembershipAuthenticationStateProvider Auth { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private IConfiguration Configuration { get; set; } = default!;
 

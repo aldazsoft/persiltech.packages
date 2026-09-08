@@ -1,9 +1,13 @@
-global using Microsoft.AspNetCore.Components;
 global using Microsoft.AspNetCore.Components.Authorization;
 global using Microsoft.Extensions.DependencyInjection;
-global using MudBlazor;
+global using Microsoft.Extensions.DependencyInjection.Extensions;
+global using Microsoft.Extensions.Options;
+global using Microsoft.JSInterop;
 global using Persiltech.Membership.Blazor.Contracts;
+global using Persiltech.Membership.Blazor.Services;
 global using System.ComponentModel.DataAnnotations;
 global using System.Net;
+global using System.Net.Http.Headers;
 global using System.Net.Http.Json;
 global using System.Security.Claims;
+global using System.Text.Json;

@@ -73,7 +73,7 @@
 </div>
 
 @code {
-    [Inject] private MembershipApiClient Api { get; set; } = default!;
+    [Inject] private SampleApiClient Api { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
     private IReadOnlyList<UserResponse> Items = [];
