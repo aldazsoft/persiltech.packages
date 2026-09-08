@@ -110,7 +110,7 @@ private async Task SubmitAsync()
 }
 ```
 
-Para llamar a los endpoints que la 0.1.0 todavía no cubre, resuelve el mismo `HttpClient` con
+Para llamar a los endpoints que esta versión todavía no cubre, resuelve el mismo `HttpClient` con
 nombre: ya lleva la dirección base y el manejador que firma.
 
 ```csharp
@@ -212,11 +212,28 @@ posterior saldría sin firmar.
 
 ## Estado
 
-Versión `0.x`: la superficie pública puede cambiar entre versiones menores.
+Preliberación: la superficie pública puede cambiar antes de la 2.0.0 definitiva.
 
-La 0.1.0 trae el núcleo de la sesión y sus formularios. Lo que llega después: perfil,
-cambio de contraseña, correo, teléfono y doble factor en la 0.2.0; roles y usuarios en la
-0.3.0.
+Esta preliberación trae el núcleo de la sesión y sus formularios. Lo que llega después:
+perfil, cambio de contraseña, correo, teléfono y doble factor; y luego roles y usuarios.
+
+## Historial de versiones
+
+El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.packages); esta
+tabla resume qué cambió en cada versión publicada.
+
+| Versión           | Cambios                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| 2.0.0-preview.1   | **Reescritura completa.** Cliente de `Persiltech.Membership` 0.6.0: estado de autenticación con renovación, almacén de testigos sustituible, manejador que firma, y los formularios de sesión, registro y contraseña. |
+| 1.0.0 – 1.0.1     | Versiones del monorepo anterior, con otra API y con las pantallas de empleados y clientes.  |
+
+**El salto de la 1.0.1 a la 2.0.0 no es una actualización: es otro paquete bajo el mismo
+nombre.** Cambian los espacios de nombres, los tipos y la composición, y desaparecen las
+pantallas de empleados y clientes, que eran dominio de la aplicación y no de la membresía.
+Migrar desde la 1.0.1 es reescribir la integración, no subir una versión.
+
+El sufijo `-preview` dice que la superficie todavía se mueve: faltan las pantallas de perfil,
+roles y usuarios.
 
 ## Soporte
 

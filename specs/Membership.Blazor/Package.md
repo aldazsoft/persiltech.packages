@@ -1,7 +1,7 @@
 ---
 packageName: Persiltech.Membership.Blazor
 title: Persiltech.Membership.Blazor
-version: 0.1.0
+version: 2.0.0
 tags: dotnet;csharp;blazor;webassembly;mudblazor;membership;identity;jwt;authentication
 withTests: true
 # El proyecto de verificación ya existe: samples/Persiltech.Membership.Blazor.Sample, que

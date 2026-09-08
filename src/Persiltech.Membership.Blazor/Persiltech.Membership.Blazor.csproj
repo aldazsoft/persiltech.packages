@@ -4,7 +4,11 @@
     <PackageId>Persiltech.Membership.Blazor</PackageId>
     <Title>Persiltech.Membership.Blazor</Title>
     <Description>Cliente Blazor de Persiltech.Membership: estado de autenticacion a partir del JWT que emite la API, renovacion automatica de la sesion, el manejador que firma cada peticion y los componentes de MudBlazor de sus pantallas.</Description>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
+    <!-- Preliberacion: el identificador ya lo ocupaba el paquete del monorepo viejo, que
+         llego a 1.0.1. Este es su sucesor y sustituye la API entera, de ahi el mayor; el
+         sufijo dice que la superficie todavia se mueve. -->
+    <VersionSuffix>preview.1</VersionSuffix>
     <PackageTags>dotnet;csharp;blazor;webassembly;mudblazor;membership;identity;jwt;authentication</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>

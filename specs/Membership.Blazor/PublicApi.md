@@ -2,13 +2,14 @@
 # Paquete al que pertenece esta superficie pública.
 packageName: Persiltech.Membership.Blazor
 
-# MAJOR.MINOR.PATCH de la próxima publicación.
-version: 0.1.0
+# MAJOR.MINOR.PATCH de la próxima publicación. El sufijo de preliberación vive solo en el
+# .csproj (<VersionSuffix>), que es la fuente de verdad de lo que se publica.
+version: 2.0.0
 ---
 
 # Superficie pública
 
-La 0.1.0 cubre **el núcleo reutilizable** —la sesión y el acceso a la API— y los
+La 2.0.0-preview.1 cubre **el núcleo reutilizable** —la sesión y el acceso a la API— y los
 **formularios de sesión** que se montan sobre él. Las pantallas de perfil y de
 administración llegan después (ver _Hoja de ruta_).
 

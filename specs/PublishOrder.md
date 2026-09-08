@@ -22,7 +22,7 @@ Las dependencias externas no aparecen aqui: ya estan publicadas y no imponen ord
 | `Persiltech.Email` | 0.1.1 | - |
 | `Persiltech.Localizer` | 1.0.3 | - |
 | `Persiltech.Membership` | 0.6.0 | - |
-| `Persiltech.Membership.Blazor` | 0.1.0 | - |
+| `Persiltech.Membership.Blazor` | 2.0.0 | - |
 | `Persiltech.UserServices.Abstractions` | 0.1.15 | - |
 
 ## Nivel 2 - dependen del nivel 1

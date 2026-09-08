@@ -95,12 +95,21 @@ jobs:
             exit 1
           fi
 
+          # Una preliberacion se declara con <VersionSuffix> aparte, y 'dotnet pack' la une
+          # al prefijo con un guion. Aqui hay que rehacer esa union: comparar solo contra el
+          # prefijo rechazaria la etiqueta de cualquier preliberacion.
+          version_suffix=$(sed -n 's:.*<VersionSuffix>\(.*\)</VersionSuffix>.*:\1:p' "$project")
+
+          if [ -n "$version_suffix" ]; then
+            project_version="$project_version-$version_suffix"
+          fi
+
           if [ "$tag_version" != "$project_version" ]; then
-            echo "::error::La etiqueta $GITHUB_REF_NAME declara $tag_version pero <VersionPrefix> es $project_version. Sube la version en el .csproj y vuelve a etiquetar."
+            echo "::error::La etiqueta $GITHUB_REF_NAME declara $tag_version pero el proyecto es $project_version. Sube la version en el .csproj y vuelve a etiquetar."
             exit 1
           fi
 
-          echo "Etiqueta $GITHUB_REF_NAME == <VersionPrefix> $project_version"
+          echo "Etiqueta $GITHUB_REF_NAME == version del proyecto $project_version"
 
       - uses: actions/setup-dotnet@v5
         with:
