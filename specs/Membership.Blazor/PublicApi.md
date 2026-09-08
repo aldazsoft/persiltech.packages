@@ -8,9 +8,20 @@ version: 0.1.0
 
 # Superficie pública
 
-La 0.1.0 cubre **el núcleo reutilizable**: la sesión y el acceso a la API. Las pantallas
-llegan después (ver _Hoja de ruta_), porque sin este núcleo no hay nada sobre lo que
-montarlas y porque es la parte que un consumidor no puede evitar escribir.
+La 0.1.0 cubre **el núcleo reutilizable** —la sesión y el acceso a la API— y los
+**formularios de sesión** que se montan sobre él. Las pantallas de perfil y de
+administración llegan después (ver _Hoja de ruta_).
+
+## Formularios, no páginas
+
+Los componentes que expone el paquete **no llevan `@page`**. Un paquete que fijara las rutas
+chocaría con las del consumidor y le quitaría el control de la navegación y de la
+maquetación: quien instala esto ya tiene su propio menú, su propio diseño y sus propias
+direcciones. Lo que se reutiliza es el formulario —los campos, la validación, la llamada y el
+tratamiento del error—, y el consumidor lo envuelve en la página que quiera.
+
+Cada formulario avisa de lo que ha conseguido con un `EventCallback`, en lugar de navegar por
+su cuenta: a dónde ir después de entrar es una decisión de la aplicación.
 
 ## MembershipApiOptions
 
@@ -77,11 +88,43 @@ public interface IMembershipApiClient
     Task<ApiResult<MembershipTokens>> RefreshAsync(string refreshToken);
     Task<ApiResult<Unit>> LogoutAsync(string refreshToken);
     Task<ApiResult<UserResponse>> GetCurrentUserAsync();
+    Task<ApiResult<Unit>> ForgotPasswordAsync(ForgotPasswordRequest request);
+    Task<ApiResult<Unit>> ResetPasswordAsync(ResetPasswordRequest request);
 }
 ```
 
-La 0.1.0 se queda en estas cinco: son las que el núcleo de sesión necesita. El resto de
-grupos entra con sus pantallas.
+Son las que necesitan la sesión y sus formularios. El resto de grupos entra con sus
+pantallas.
+
+## Los formularios
+
+Todos son `sealed`, viven en `Components/` y comparten forma: pintan sus campos con MudBlazor,
+llaman al cliente, muestran los errores por campo que devuelva la API y avisan por su
+`EventCallback`.
+
+| Componente                       | Qué hace                                        | Aviso                                  |
+| -------------------------------- | ----------------------------------------------- | -------------------------------------- |
+| `MembershipLoginForm`            | Autentica y abre la sesión.                     | `OnLoggedIn` (`MembershipTokens`)      |
+| `MembershipRegisterForm`         | Crea una cuenta.                                | `OnRegistered` (`string`, el correo)   |
+| `MembershipForgotPasswordForm`   | Pide el correo de reinicio.                     | `OnRequested` (`string`, el correo)    |
+| `MembershipResetPasswordForm`    | Fija la contraseña con el testigo recibido.     | `OnReset`                              |
+| `MembershipValidationErrors`     | Pinta los errores de un `ApiResult<T>`.         | —                                      |
+
+Parámetros comunes a los cuatro formularios:
+
+| Parámetro                          | Descripción                                                  |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `string SubmitLabel { get; set; }` | Texto del botón. Cada uno trae el suyo por defecto.          |
+| `bool Dense { get; set; }`         | Campos compactos, para encajar en un diálogo.                |
+
+**`MembershipLoginForm` abre la sesión por su cuenta**: llama a
+`MembershipAuthenticationStateProvider.SignInAsync` antes de invocar `OnLoggedIn`. Es lo único
+que no puede quedar en manos del consumidor sin que el formulario deje de servir para nada —
+si no, cada aplicación repetiría el mismo par de líneas y una de ellas se olvidaría.
+
+El campo del segundo factor **solo aparece cuando la API lo pide**: la primera respuesta con
+el error en `twoFactorCode` lo revela. Mostrarlo siempre invitaría a rellenarlo a quien no lo
+tiene activado.
 
 ## ApiResult&lt;T&gt;
 
@@ -188,10 +231,12 @@ una versión mayor del paquete servidor, que acaba de salir.
 
 | Versión | Qué entra |
 | ------- | --------- |
-| 0.1.0   | El núcleo: opciones, cliente de API, `ApiResult<T>`, almacén de testigos, estado de autenticación con renovación y el manejador que firma. |
-| 0.2.0   | Pantallas de sesión: iniciar sesión, registrarse, contraseña olvidada y reinicio. |
-| 0.3.0   | Perfil, cambio de contraseña, cambio y confirmación de correo, cambio de teléfono, doble factor. |
-| 0.4.0   | Administración: roles y usuarios. |
+| 0.1.0   | El núcleo —opciones, cliente de API, `ApiResult<T>`, almacén de testigos, estado de autenticación con renovación, el manejador que firma— y los formularios de sesión: entrar, registrarse, contraseña olvidada y reinicio. |
+| 0.2.0   | Perfil, cambio de contraseña, cambio y confirmación de correo, cambio de teléfono, doble factor. |
+| 0.3.0   | Administración: roles y usuarios. |
+
+Los formularios de sesión estaban previstos para una 0.2.0, pero la 0.1.0 no llegó a
+publicarse: separarlos habría dejado en el historial una versión que nadie pudo instalar.
 
 Extraer `Persiltech.Membership.Contracts` queda anotado como candidato para cuando el
 paquete servidor suba de mayor.
@@ -201,6 +246,7 @@ paquete servidor suba de mayor.
 | Ubicación     | Namespace                                   | Contiene                                                      |
 | ------------- | ------------------------------------------- | ------------------------------------------------------------- |
 | Raíz          | `Persiltech.Membership.Blazor`              | `DependencyInjection`, `MembershipApiOptions` y los tipos que el consumidor nombra al componer. |
+| `Components/` | `Persiltech.Membership.Blazor.Components`   | Los formularios y el componente de errores.                   |
 | `Contracts/`  | `Persiltech.Membership.Blazor.Contracts`    | Los cuerpos de petición y respuesta y `ApiResult<T>`.         |
 | `Services/`   | `Persiltech.Membership.Blazor.Services`     | El cliente de la API, el almacén de testigos y el estado de autenticación. |
 | `Internal/`   | `Persiltech.Membership.Blazor.Internal`     | Lo que no forma parte del contrato.                           |

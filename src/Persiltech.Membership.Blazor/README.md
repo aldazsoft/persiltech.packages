@@ -45,6 +45,8 @@ public interface IMembershipApiClient
     Task<ApiResult<MembershipTokens>> RefreshAsync(string refreshToken);
     Task<ApiResult<Unit>> LogoutAsync(string refreshToken);
     Task<ApiResult<UserResponse>> GetCurrentUserAsync();
+    Task<ApiResult<Unit>> ForgotPasswordAsync(ForgotPasswordRequest request);
+    Task<ApiResult<Unit>> ResetPasswordAsync(ResetPasswordRequest request);
 }
 
 public sealed class MembershipAuthenticationStateProvider : AuthenticationStateProvider
@@ -115,6 +117,57 @@ nombre: ya lleva la dirección base y el manejador que firma.
 var http = factory.CreateClient(DependencyInjection.HttpClientName);
 ```
 
+## Los formularios
+
+Cuatro componentes de MudBlazor que hacen la llamada, pintan los errores por campo que
+devuelva la API y avisan por un `EventCallback`:
+
+| Componente                     | Aviso                                |
+| ------------------------------ | ------------------------------------ |
+| `MembershipLoginForm`          | `OnLoggedIn` (`MembershipTokens`)    |
+| `MembershipRegisterForm`       | `OnRegistered` (`string`, el correo) |
+| `MembershipForgotPasswordForm` | `OnRequested` (`string`, el correo)  |
+| `MembershipResetPasswordForm`  | `OnReset`                            |
+
+**No llevan `@page`.** Un paquete que fijara las rutas chocaría con las tuyas y te quitaría el
+control de la navegación y de la maquetación. Lo que se reutiliza es el formulario; tú lo
+envuelves en la página que quieras:
+
+```razor
+@page "/login"
+
+<MudCard Outlined="true" Style="max-width: 520px">
+    <MudCardContent>
+        <MembershipLoginForm InitialEmail="@Email" OnLoggedIn="OnLoggedInAsync" />
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private Task OnLoggedInAsync(MembershipTokens tokens)
+    {
+        Navigation.NavigateTo("profile");
+
+        return Task.CompletedTask;
+    }
+}
+```
+
+`MembershipLoginForm` **abre la sesión por su cuenta** —llama a `SignInAsync` antes de invocar
+`OnLoggedIn`—, porque si no, cada aplicación repetiría el mismo par de líneas y una de ellas se
+olvidaría. A dónde ir después sí es tuyo.
+
+El campo del segundo factor **solo aparece cuando la API lo pide**: mostrarlo siempre
+invitaría a rellenarlo a quien no lo tiene activado.
+
+`MembershipRegisterForm` no abre la sesión: según tu política, la cuenta puede necesitar
+confirmar el correo antes de poder entrar.
+
+Los cuatro aceptan `SubmitLabel` para el texto del botón y `Dense` para encajar en un diálogo.
+Para pintar los errores de una llamada tuya, `MembershipValidationErrors` toma el
+`ApiResult<T>.Errors` directamente.
+
 ## La sesión
 
 **El token se lee, no se valida.** La firma la comprueba la API en cada petición; hacerlo
@@ -161,8 +214,9 @@ posterior saldría sin firmar.
 
 Versión `0.x`: la superficie pública puede cambiar entre versiones menores.
 
-La 0.1.0 trae el núcleo de la sesión. Las pantallas llegan después: sesión en la 0.2.0;
-perfil, contraseña, correo, teléfono y doble factor en la 0.3.0; roles y usuarios en la 0.4.0.
+La 0.1.0 trae el núcleo de la sesión y sus formularios. Lo que llega después: perfil,
+cambio de contraseña, correo, teléfono y doble factor en la 0.2.0; roles y usuarios en la
+0.3.0.
 
 ## Soporte
 

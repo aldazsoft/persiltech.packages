@@ -43,6 +43,14 @@ public sealed class MembershipApiClient(
     public Task<ApiResult<UserResponse>> GetCurrentUserAsync() =>
         SendAsync<UserResponse>(HttpMethod.Get, $"{options.Value.UsersPath}/current", null);
 
+    /// <inheritdoc />
+    public Task<ApiResult<Unit>> ForgotPasswordAsync(ForgotPasswordRequest request) =>
+        SendAsync<Unit>(HttpMethod.Post, $"{options.Value.PasswordPath}/forgot", request);
+
+    /// <inheritdoc />
+    public Task<ApiResult<Unit>> ResetPasswordAsync(ResetPasswordRequest request) =>
+        SendAsync<Unit>(HttpMethod.Post, $"{options.Value.PasswordPath}/reset", request);
+
     private async Task<ApiResult<T>> SendAsync<T>(HttpMethod method, string path, object? body)
     {
         using var request = new HttpRequestMessage(method, path);

@@ -23,12 +23,6 @@ public sealed class SampleApiClient(HttpClient http)
 
     // --- Contraseña ---------------------------------------------------------
 
-    public Task<ApiResult<object>> ForgotPasswordAsync(ForgotPasswordRequest request) =>
-        SendAsync<object>(HttpMethod.Post, "password/forgot", request);
-
-    public Task<ApiResult<object>> ResetPasswordAsync(ResetPasswordRequest request) =>
-        SendAsync<object>(HttpMethod.Post, "password/reset", request);
-
     public Task<ApiResult<object>> ChangePasswordAsync(ChangePasswordRequest request) =>
         SendAsync<object>(HttpMethod.Post, "password/change", request);
 

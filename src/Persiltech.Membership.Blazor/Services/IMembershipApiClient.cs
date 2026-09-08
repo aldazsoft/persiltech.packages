@@ -45,4 +45,21 @@ public interface IMembershipApiClient
     /// </summary>
     /// <returns>El usuario y sus roles.</returns>
     Task<ApiResult<UserResponse>> GetCurrentUserAsync();
+
+    /// <summary>
+    /// Pide el correo con el que reiniciar una contraseña olvidada.
+    /// </summary>
+    /// <param name="request">Correo de la cuenta.</param>
+    /// <returns>
+    /// Sin cuerpo. La API responde 204 exista o no la cuenta, para no revelar qué correos
+    /// están registrados.
+    /// </returns>
+    Task<ApiResult<Unit>> ForgotPasswordAsync(ForgotPasswordRequest request);
+
+    /// <summary>
+    /// Fija una contraseña nueva con el testigo que llegó por correo.
+    /// </summary>
+    /// <param name="request">Correo, testigo y contraseña nueva.</param>
+    /// <returns>Sin cuerpo: la API responde 204.</returns>
+    Task<ApiResult<Unit>> ResetPasswordAsync(ResetPasswordRequest request);
 }

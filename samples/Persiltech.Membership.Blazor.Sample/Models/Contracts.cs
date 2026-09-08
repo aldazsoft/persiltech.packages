@@ -4,10 +4,6 @@ namespace Persiltech.Membership.Blazor.Sample.Models;
 // aquí en lugar de referenciar el paquete de servidor: un frontend solo conoce el JSON que
 // la API publica, y copiarlo es lo que pone a prueba que ese contrato baste.
 
-public sealed record ForgotPasswordRequest(string Email);
-
-public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
-
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 public sealed record SendEmailConfirmationRequest(string Email);
