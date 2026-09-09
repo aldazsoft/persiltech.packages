@@ -63,6 +63,33 @@ Lo que el paquete **no** hace por las columnas nuevas: no las valida, no las dev
 los suyos para leerlas y escribirlas. El paquete solo garantiza que quepan en la misma
 cuenta y que `UserManager<TUser>` las resuelva.
 
+## El esquema también es del consumidor
+
+El contexto derivado es igualmente el sitio donde se elige el esquema, sobrescribiendo
+`OnModelCreating` y llamando a `HasDefaultSchema` **antes** de la base:
+
+```csharp
+public sealed class MegadMembershipDbContext(DbContextOptions<MegadMembershipDbContext> options)
+    : MembershipDbContext<ApplicationUser>(options)
+{
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.HasDefaultSchema("membership");
+
+        base.OnModelCreating(builder);
+    }
+}
+```
+
+Alcanza a todo lo que el paquete declara, incluida `MembershipRefreshTokens`, que se mapea
+con `ToTable` sin esquema y por tanto toma el que esté por defecto. Y no exige extender el
+usuario: `TUser` puede seguir siendo `ApplicationUser`.
+
+**`AddMembershipServices` no recibe el esquema como parámetro, a propósito.** Entity Framework
+Core cachea el modelo por tipo de contexto, así que un esquema pasado como valor de ejecución
+se compartiría entre registros del mismo tipo y separarlos pediría un `IModelCacheKeyFactory`
+propio. Derivando, el esquema forma parte del tipo y no hay nada que separar.
+
 ## MembershipDbContext
 
 Contexto de datos de Identity. Clase `sealed` que hereda de

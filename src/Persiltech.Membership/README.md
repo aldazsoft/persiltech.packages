@@ -633,6 +633,39 @@ Lo que el paquete **no** hace por esas columnas: no las valida, no las devuelve 
 `UserResponse` y no las expone en ningún endpoint. Son tuyas, y los endpoints que las lean y
 escriban también. El paquete solo garantiza que quepan en la misma cuenta.
 
+## Elegir el esquema
+
+Por defecto las tablas caen en el esquema que Entity Framework Core use por defecto —`dbo` en
+SQL Server—. Si compartes base de datos con otro dominio y quieres la membresía aparte, el
+contexto derivado es también el sitio para decirlo:
+
+```csharp
+public sealed class MegadMembershipDbContext(DbContextOptions<MegadMembershipDbContext> options)
+    : MembershipDbContext<ApplicationUser>(options)
+{
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.HasDefaultSchema("membership");
+
+        base.OnModelCreating(builder);
+    }
+}
+```
+
+```csharp
+builder.Services.AddMembershipServices<ApplicationUser, MegadMembershipDbContext>(...);
+```
+
+Fíjate en que `TUser` sigue siendo `ApplicationUser`: **no hace falta extender el usuario para
+cambiar de esquema**, solo el contexto. Y el `HasDefaultSchema` va **antes** de
+`base.OnModelCreating` para que alcance a todo lo que el paquete declara: las siete tablas de
+Identity y `MembershipRefreshTokens`.
+
+**No hay un parámetro de esquema en `AddMembershipServices`, y es deliberado.** Entity
+Framework Core cachea el modelo por tipo de contexto: un esquema pasado como valor de ejecución
+se compartiría entre registros del mismo tipo, y separarlos exigiría un `IModelCacheKeyFactory`
+propio. Derivando, el esquema forma parte del tipo y el problema no existe.
+
 ## El testigo de renovación
 
 No es un JWT y no lleva información: son 32 bytes aleatorios en Base64 de URL. En la base de
