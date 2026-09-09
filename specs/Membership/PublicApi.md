@@ -6,7 +6,7 @@ packageName: Persiltech.Membership
 # MAJOR.MINOR.PATCH de la próxima publicación. Es el campo que se sube para
 # preparar una nueva versión: se propaga a <VersionPrefix> del .csproj, que es
 # la versión que acaba en nuget.org.
-version: 0.6.0
+version: 0.6.1
 ---
 
 # Superficie pública

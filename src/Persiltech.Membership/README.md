@@ -796,6 +796,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.6.1   | Solo documentación: se explica cómo elegir el esquema de las tablas derivando el contexto (ver _Elegir el esquema_). El código no cambia. |
 | 0.6.0   | Renovación y cierre de sesión (`SessionEndpoints`), con rotación del testigo y detección de reutilización. `LoginUserResponse` pasa a devolver también `refreshToken`, lo que **rompe el contrato de la 0.5.0**. Nueva tabla `MembershipRefreshTokens` y nueva opción `RefreshTokenExpireInDays`. Cambiar la contraseña y desactivar una cuenta revocan las sesiones abiertas. `ApplicationUser` deja de ser `sealed` y el paquete admite el usuario y el contexto del consumidor con `AddMembershipServices<TUser, TContext>`: cada método público gana una forma genérica, y la de siempre se conserva. |
 | 0.5.0   | Primera versión en nuget.org: registro y autenticación sobre ASP.NET Core Identity con emisión de JWT, y los endpoints de cuenta, roles, usuarios, contraseña, correo, teléfono, perfil y doble factor. |
 
