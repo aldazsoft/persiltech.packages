@@ -4,7 +4,7 @@
     <PackageId>Persiltech.Membership.OAuth</PackageId>
     <Title>Persiltech.Membership.OAuth</Title>
     <Description>Servidor de autorización OAuth 2.0 y OpenID Connect para Persiltech.Membership, construido sobre OpenIddict: flujo Authorization Code con PKCE, credenciales de cliente y renovación por refresh token, con las cuentas de ASP.NET Core Identity que administra el paquete base.</Description>
-    <VersionPrefix>0.2.0</VersionPrefix>
+    <VersionPrefix>0.3.0</VersionPrefix>
     <PackageTags>dotnet;csharp;aspnetcore;oauth2;openid-connect;openiddict;identity;pkce;minimal-api</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>

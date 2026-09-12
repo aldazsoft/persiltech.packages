@@ -44,7 +44,8 @@ nada de ASP.NET Core y añadirlo lo ataría a aplicaciones web.
 - **El contrato y la implementación viajan juntos.** A diferencia de `UserServices`, aquí no
   hay un paquete de puros contratos aparte: `IEmailSender` no se implementa de varias formas
   en la misma solución, así que separarlo solo añadiría un paquete que mantener.
-- **Las opciones se validan al arrancar**, con `ValidateDataAnnotations().ValidateOnStart()`.
+- **Las opciones se validan al arrancar**, con `SmtpOptionsValidator` —un
+  `IValidateOptions<SmtpOptions>`— encadenado con `ValidateOnStart()`.
   Un servidor SMTP mal configurado se descubre al desplegar, no cuando alguien pide un
   correo.
 - **Remitente y destinatario se analizan con el mismo criterio**, que rechaza direcciones sin

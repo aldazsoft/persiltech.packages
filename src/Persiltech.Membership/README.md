@@ -1,3 +1,4 @@
+| 0.7.0   | Las opciones dejan de llevar anotaciones de datos: `JwtOptions` pasa a ser una clase plana y la validación la hace `JwtOptionsValidator`, un `IValidateOptions<JwtOptions>` que sigue corriendo con `ValidateOnStart()`. Devuelve todos los fallos de una vez en lugar de cortar en el primero, y mide `SecurityKey` en bytes UTF-8 —que es lo que cuenta HMAC-SHA256— en lugar de caracteres. El comportamiento al arrancar no cambia; sí lo hace la superficie pública, porque las anotaciones eran parte de ella. |
 # Persiltech.Membership
 
 [![NuGet](https://img.shields.io/nuget/v/Persiltech.Membership.svg)](https://www.nuget.org/packages/Persiltech.Membership/)
@@ -36,20 +37,10 @@ public sealed class MembershipDbContext(DbContextOptions<MembershipDbContext> op
 
 public sealed class JwtOptions
 {
-    [Required]
-    [MinLength(32)]
     public string SecurityKey { get; set; } = string.Empty;
-
-    [Required]
     public string ValidIssuer { get; set; } = string.Empty;
-
-    [Required]
     public string ValidAudience { get; set; } = string.Empty;
-
-    [Range(1, int.MaxValue)]
     public int ExpireInMinutes { get; set; }
-
-    [Range(1, int.MaxValue)]
     public int RefreshTokenExpireInDays { get; set; } = 14;
 }
 
@@ -133,11 +124,16 @@ anotaciones no validan peticiones: describen la columna que genera Entity Framew
 Arriba se muestra solo la forma corriente de cada método; cada uno tiene además una forma
 genérica en `TUser`. Ver *Extender el usuario*.
 
-`JwtOptions` se valida **al arrancar la aplicación**, no en la primera petición:
-`AddMembershipServices` encadena `ValidateDataAnnotations().ValidateOnStart()`. El mínimo
-de 32 caracteres de `SecurityKey` no es arbitrario — HMAC-SHA256 exige una clave de al
-menos 256 bits — y convierte en un fallo de arranque lo que si no sería una excepción al
-emitir el primer token.
+`JwtOptions` es una clase plana, sin anotaciones de datos. Se valida **al arrancar la
+aplicación**, no en la primera petición: `AddMembershipServices` registra su
+`IValidateOptions<JwtOptions>` y encadena `ValidateOnStart()`. Una configuración incompleta
+detiene el arranque, y el validador devuelve todos los fallos de una vez en lugar de cortar
+en el primero.
+
+El mínimo de 32 **bytes** de `SecurityKey` no es arbitrario —HMAC-SHA256 exige una clave de
+al menos 256 bits— y convierte en un fallo de arranque lo que si no sería una excepción al
+emitir el primer token. Se miden bytes UTF-8 y no caracteres, que es lo que cuenta el
+algoritmo.
 
 `MapMembershipEndpoints` no hace nada que no puedas hacer llamando a los otros dos métodos:
 es el atajo para el caso corriente. Devuelve el `IEndpointRouteBuilder` porque monta dos
@@ -796,6 +792,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.7.0   | Las opciones dejan de llevar anotaciones de datos: `JwtOptions` pasa a ser una clase plana y la validación la hace `JwtOptionsValidator`, un `IValidateOptions<JwtOptions>` que sigue corriendo con `ValidateOnStart()`. Devuelve todos los fallos de una vez en lugar de cortar en el primero, y mide `SecurityKey` en bytes UTF-8 —que es lo que cuenta HMAC-SHA256— en lugar de caracteres. El arranque se comporta igual; cambia la superficie pública, porque las anotaciones eran parte de ella. |
 | 0.6.1   | Solo documentación: se explica cómo elegir el esquema de las tablas derivando el contexto (ver _Elegir el esquema_). El código no cambia. |
 | 0.6.0   | Renovación y cierre de sesión (`SessionEndpoints`), con rotación del testigo y detección de reutilización. `LoginUserResponse` pasa a devolver también `refreshToken`, lo que **rompe el contrato de la 0.5.0**. Nueva tabla `MembershipRefreshTokens` y nueva opción `RefreshTokenExpireInDays`. Cambiar la contraseña y desactivar una cuenta revocan las sesiones abiertas. `ApplicationUser` deja de ser `sealed` y el paquete admite el usuario y el contexto del consumidor con `AddMembershipServices<TUser, TContext>`: cada método público gana una forma genérica, y la de siempre se conserva. |
 | 0.5.0   | Primera versión en nuget.org: registro y autenticación sobre ASP.NET Core Identity con emisión de JWT, y los endpoints de cuenta, roles, usuarios, contraseña, correo, teléfono, perfil y doble factor. |

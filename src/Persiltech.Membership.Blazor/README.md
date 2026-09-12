@@ -19,7 +19,7 @@ dotnet add package Persiltech.Membership.Blazor
 ```csharp
 public sealed class MembershipApiOptions
 {
-    [Required] public string BaseAddress { get; set; }
+    public string BaseAddress { get; set; }
 
     public string LoginPath { get; set; } = "user/login";
     public string RegisterPath { get; set; } = "user/register";
@@ -224,6 +224,7 @@ tabla resume qué cambió en cada versión publicada.
 
 | Versión           | Cambios                                                                                     |
 | ----------------- | ------------------------------------------------------------------------------------------- |
+| 2.0.0-preview.2   | `MembershipApiOptions` pasa a ser una clase plana, sin anotaciones de datos. La comprobación la hace `MembershipApiOptionsValidator`, que `AddMembershipBlazor` invoca al registrar —en WebAssembly no hay host que arranque servicios, así que `ValidateOnStart` no correría nunca— y que ahora revisa también que las rutas sean relativas a `BaseAddress`. |
 | 2.0.0-preview.1   | **Reescritura completa.** Cliente de `Persiltech.Membership` 0.6.0: estado de autenticación con renovación, almacén de testigos sustituible, manejador que firma, y los formularios de sesión, registro y contraseña. |
 | 1.0.0 – 1.0.1     | Versiones del monorepo anterior, con otra API y con las pantallas de empleados y clientes.  |
 

@@ -50,11 +50,12 @@ public static class DependencyInjection
         var options = new MembershipApiOptions();
         configureOptions(options);
 
-        if (!Uri.TryCreate(options.BaseAddress, UriKind.Absolute, out _))
+        var validation = new MembershipApiOptionsValidator().Validate(name: null, options);
+
+        if (validation.Failed)
         {
             throw new ArgumentException(
-                $"'{nameof(MembershipApiOptions.BaseAddress)}' tiene que ser una URL absoluta. " +
-                $"Se recibió: '{options.BaseAddress}'.",
+                string.Join(" ", validation.Failures ?? []),
                 nameof(configureOptions));
         }
 

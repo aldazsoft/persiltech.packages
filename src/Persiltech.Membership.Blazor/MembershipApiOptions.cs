@@ -8,13 +8,19 @@ namespace Persiltech.Membership.Blazor;
 /// <c>Map*</c> del paquete reciben el patrón, así que un cliente que las fijara obligaría a
 /// montar la API en las suyas. Los valores por defecto coinciden con los que propone el
 /// paquete servidor, de modo que quien no las cambie no configura ninguna.
+/// <para>
+/// Lo que se puede dar por bueno lo decide <see cref="MembershipApiOptionsValidator"/>. A
+/// diferencia del resto de la casa no se engancha con <c>ValidateOnStart</c>: en Blazor
+/// WebAssembly no hay host que arranque servicios, así que esa validación no correría nunca.
+/// Lo llama <see cref="DependencyInjection.AddMembershipBlazor"/> al registrar, que es el
+/// momento más temprano que existe en este modelo de alojamiento.
+/// </para>
 /// </remarks>
 public sealed class MembershipApiOptions
 {
     /// <summary>
     /// Raíz de la API, con esquema y autoridad. Obligatoria.
     /// </summary>
-    [Required]
     public string BaseAddress { get; set; } = string.Empty;
 
     /// <summary>Ruta del endpoint de autenticación.</summary>

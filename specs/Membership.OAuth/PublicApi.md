@@ -62,8 +62,12 @@ public sealed class MembershipOAuthOptions
 }
 ```
 
-Se validan con `ValidateDataAnnotations().ValidateOnStart()`: una ruta mal escrita falla el
-arranque, no la primera petición.
+Es una **clase plana**: sin anotaciones de datos, como toda clase de opciones de la casa. Se
+validan con `MembershipOAuthOptionsValidator`, registrado como
+`IValidateOptions<MembershipOAuthOptions>` y encadenado con `ValidateOnStart()`: una ruta mal
+escrita falla el arranque, no la primera petición. El validador comprueba además que las rutas
+empiecen por `/` y no se repitan entre sí, que es lo que una anotación no alcanza: dos
+endpoints en la misma ruta arrancan sin protestar y fallan al primer intento de autorizar.
 
 `Scopes` añade ámbitos propios a los cuatro que el paquete registra siempre: `openid`,
 `email`, `profile` y `roles`.

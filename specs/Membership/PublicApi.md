@@ -6,7 +6,7 @@ packageName: Persiltech.Membership
 # MAJOR.MINOR.PATCH de la próxima publicación. Es el campo que se sube para
 # preparar una nueva versión: se propaga a <VersionPrefix> del .csproj, que es
 # la versión que acaba en nuget.org.
-version: 0.6.1
+version: 0.7.0
 ---
 
 # Superficie pública
@@ -131,19 +131,30 @@ No declara `DbSet<>` propios ni sobrescribe `OnModelCreating`: el modelo es el e
 Opciones de emisión del token de acceso. Clase `sealed`. El consumidor las rellena con el
 delegado `Action<JwtOptions>` de `AddMembershipServices`.
 
-| Miembro                              | Anotaciones                     | Descripción                                                                      |
-| ------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------- |
-| `string SecurityKey { get; set; }`   | `[Required]`, `[MinLength(32)]` | Clave simétrica con la que se firma el token. Obligatoria, mínimo 32 caracteres. |
-| `string ValidIssuer { get; set; }`   | `[Required]`                    | Emisor que viaja en la reclamación `iss`. Obligatorio.                           |
-| `string ValidAudience { get; set; }` | `[Required]`                    | Audiencia que viaja en la reclamación `aud`. Obligatoria.                        |
-| `int ExpireInMinutes { get; set; }`  | `[Range(1, int.MaxValue)]`      | Minutos de vigencia del token desde su emisión. Obligatorio, mayor que cero.     |
-| `int RefreshTokenExpireInDays { get; set; }` | `[Range(1, int.MaxValue)]` | Días de vigencia del testigo de renovación. Obligatorio, mayor que cero. Por defecto 14. |
+Es una **clase plana**: sin anotaciones de datos, como toda clase de opciones de la casa. Lo
+que se puede dar por bueno lo decide `JwtOptionsValidator`.
+
+| Miembro                                      | Restricción             | Descripción                                                                              |
+| -------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
+| `string SecurityKey { get; set; }`           | Obligatoria, ≥ 32 bytes | Clave simétrica con la que se firma el token.                                            |
+| `string ValidIssuer { get; set; }`           | Obligatorio             | Emisor que viaja en la reclamación `iss`.                                                |
+| `string ValidAudience { get; set; }`         | Obligatoria             | Audiencia que viaja en la reclamación `aud`.                                             |
+| `int ExpireInMinutes { get; set; }`          | Mayor que cero          | Minutos de vigencia del token desde su emisión.                                          |
+| `int RefreshTokenExpireInDays { get; set; }` | Mayor que cero          | Días de vigencia del testigo de renovación. Por defecto 14.                              |
 
 `RefreshTokenExpireInDays` vive aquí y no en unas opciones propias porque las dos vigencias
 se eligen juntas: son los dos extremos de la misma sesión, y separarlas invitaría a
 configurar una y olvidar la otra.
 
-Las anotaciones de datos se validan **al arrancar la aplicación**, no en la primera petición: `AddMembershipServices` encadena `ValidateDataAnnotations().ValidateOnStart()`. Así, una violación de restricción detiene la aplicación en el arranque, que es donde el error se ve a tiempo.
+Se validan **al arrancar la aplicación**, no en la primera petición: `AddMembershipServices`
+registra `JwtOptionsValidator` como `IValidateOptions<JwtOptions>` y encadena
+`ValidateOnStart()`. Una configuración incompleta detiene el arranque, que es donde el error
+se ve a tiempo, y el validador devuelve **todos** los fallos de una vez en lugar de cortar en
+el primero.
+
+La clave se mide en **bytes UTF-8**, no en caracteres, que es lo que cuenta HMAC-SHA256.
+Contarla por caracteres dejaba pasar cadenas de 32 letras con menos entropía de la que el
+algoritmo pide, y rechazaba claves con acentos o emoji que sí llegan al mínimo.
 
 El mínimo de 32 caracteres no es arbitrario: HMAC-SHA256 exige una clave de al menos 256
 bits, y una cadena de 32 caracteres ASCII es exactamente eso. Con una más corta, la
@@ -413,7 +424,8 @@ Registra lo siguiente, en este orden:
    `AddRoles` es lo que aporta `RoleManager<IdentityRole>`, que `AddIdentityCore` por sí
    solo no registra; el orden importa, porque `AddEntityFrameworkStores` tiene que ir
    después para que registre también el almacén de roles.
-3. `AddOptions<JwtOptions>().Configure(configureJwtOptions).ValidateDataAnnotations().ValidateOnStart()`.
+3. `AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>()` y
+   `AddOptions<JwtOptions>().Configure(configureJwtOptions).ValidateOnStart()`.
 4. El emisor de tokens interno (ver _Tipos internos_).
 
 Devuelve la misma colección para poder encadenar.

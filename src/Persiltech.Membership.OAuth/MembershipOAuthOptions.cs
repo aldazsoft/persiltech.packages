@@ -5,31 +5,31 @@ namespace Persiltech.Membership.OAuth;
 /// <c>Action&lt;MembershipOAuthOptions&gt;</c> de
 /// <see cref="DependencyInjection.AddMembershipOAuthServer"/>.
 /// </summary>
+/// <remarks>
+/// Lo que se puede dar por bueno lo decide <see cref="MembershipOAuthOptionsValidator"/>, que
+/// corre al arrancar la aplicación.
+/// </remarks>
 public sealed class MembershipOAuthOptions
 {
     /// <summary>
     /// Ruta del endpoint de autorización, donde empieza el flujo Authorization Code.
     /// </summary>
-    [Required]
     public string AuthorizationEndpointPath { get; set; } = "/connect/authorize";
 
     /// <summary>
     /// Ruta del endpoint de testigos, donde se canjea el código y se renueva la sesión.
     /// </summary>
-    [Required]
     public string TokenEndpointPath { get; set; } = "/connect/token";
 
     /// <summary>
     /// Ruta del endpoint de información del usuario, que devuelve sus reclamaciones a
     /// partir del token de acceso.
     /// </summary>
-    [Required]
     public string UserInfoEndpointPath { get; set; } = "/connect/userinfo";
 
     /// <summary>
     /// Ruta del endpoint de fin de sesión, que cierra la sesión interactiva.
     /// </summary>
-    [Required]
     public string EndSessionEndpointPath { get; set; } = "/connect/logout";
 
     /// <summary>
@@ -39,7 +39,6 @@ public sealed class MembershipOAuthOptions
     /// Lo atiende OpenIddict por completo: no hay manejador propio que montar, y por eso
     /// esta ruta no aparece en <see cref="OAuthEndpoints.MapMembershipOAuthEndpoints"/>.
     /// </remarks>
-    [Required]
     public string RevocationEndpointPath { get; set; } = "/connect/revoke";
 
     /// <summary>
@@ -51,7 +50,6 @@ public sealed class MembershipOAuthOptions
     /// podría, porque el flujo Authorization Code exige una sesión interactiva de navegador
     /// y este paquete no impone ni interfaz ni maquetación.
     /// </remarks>
-    [Required]
     public string LoginPath { get; set; } = "/account/login";
 
     /// <summary>
@@ -62,20 +60,17 @@ public sealed class MembershipOAuthOptions
     /// Por defecto el de cookies. No es el esquema con el que se validan los tokens que
     /// emite el servidor: ese es del consumidor, igual que en el paquete base.
     /// </remarks>
-    [Required]
     public string InteractiveAuthenticationScheme { get; set; } =
         CookieAuthenticationDefaults.AuthenticationScheme;
 
     /// <summary>
     /// Minutos de vigencia del token de acceso desde su emisión.
     /// </summary>
-    [Range(1, int.MaxValue)]
     public int AccessTokenLifetimeInMinutes { get; set; } = 30;
 
     /// <summary>
     /// Días de vigencia del testigo de renovación desde su emisión.
     /// </summary>
-    [Range(1, int.MaxValue)]
     public int RefreshTokenLifetimeInDays { get; set; } = 14;
 
     /// <summary>

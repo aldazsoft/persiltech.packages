@@ -179,6 +179,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.3.0   | `MembershipOAuthOptions` pasa a ser una clase plana, sin anotaciones de datos, y la validación la hace `MembershipOAuthOptionsValidator`. Comprueba además que las rutas empiecen por `/` y no se repitan entre sí: dos endpoints en la misma ruta arrancaban sin protestar y fallaban al primer intento de autorizar. |
 | 0.2.0   | Primera versión en nuget.org: servidor de autorización sobre OpenIddict con Authorization Code + PKCE, credenciales de cliente y refresh token, sobre las cuentas de `Persiltech.Membership`. |
 
 La versión `0.1.0` fue interna y nunca llegó a nuget.org.

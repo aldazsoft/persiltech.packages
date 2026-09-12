@@ -5,8 +5,9 @@ namespace Persiltech.Membership;
 /// </summary>
 /// <remarks>
 /// Se validan al arrancar la aplicación, no en la primera petición: el registro encadena
-/// <c>ValidateDataAnnotations().ValidateOnStart()</c>, de modo que una violación de
-/// restricción detiene el arranque.
+/// <c>ValidateOnStart()</c> sobre <see cref="Internal.JwtOptionsValidator"/>, de modo que una
+/// configuración incompleta detiene el arranque en lugar de fallar al autenticar al primero
+/// que lo intente.
 /// </remarks>
 public sealed class JwtOptions
 {
@@ -19,26 +20,21 @@ public sealed class JwtOptions
     /// consumidor desde su configuración; el paquete no lo registra ni lo devuelve en
     /// ninguna respuesta.
     /// </remarks>
-    [Required]
-    [MinLength(32)]
     public string SecurityKey { get; set; } = string.Empty;
 
     /// <summary>
     /// Emisor que viaja en la reclamación <c>iss</c>. Obligatorio.
     /// </summary>
-    [Required]
     public string ValidIssuer { get; set; } = string.Empty;
 
     /// <summary>
     /// Audiencia que viaja en la reclamación <c>aud</c>. Obligatoria.
     /// </summary>
-    [Required]
     public string ValidAudience { get; set; } = string.Empty;
 
     /// <summary>
     /// Minutos de vigencia del token desde su emisión. Obligatorio, mayor que cero.
     /// </summary>
-    [Range(1, int.MaxValue)]
     public int ExpireInMinutes { get; set; }
 
     /// <summary>
@@ -49,6 +45,5 @@ public sealed class JwtOptions
     /// son los dos extremos de la misma sesión, y separarlas invitaría a configurar una y
     /// olvidar la otra.
     /// </remarks>
-    [Range(1, int.MaxValue)]
     public int RefreshTokenExpireInDays { get; set; } = 14;
 }

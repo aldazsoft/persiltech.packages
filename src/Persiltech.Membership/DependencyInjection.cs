@@ -87,9 +87,10 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<TContext>()
             .AddDefaultTokenProviders();
 
+        services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
+
         services.AddOptions<JwtOptions>()
             .Configure(configureJwtOptions)
-            .ValidateDataAnnotations()
             .ValidateOnStart();
 
         services.AddSingleton<IAccessTokenFactory, JwtAccessTokenFactory>();

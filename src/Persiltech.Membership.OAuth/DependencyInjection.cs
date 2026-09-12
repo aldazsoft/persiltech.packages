@@ -40,9 +40,10 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(configureDbContext);
         ArgumentNullException.ThrowIfNull(configureOptions);
 
+        services.AddSingleton<IValidateOptions<MembershipOAuthOptions>, MembershipOAuthOptionsValidator>();
+
         services.AddOptions<MembershipOAuthOptions>()
             .Configure(configureOptions)
-            .ValidateDataAnnotations()
             .ValidateOnStart();
 
         var options = new MembershipOAuthOptions();
