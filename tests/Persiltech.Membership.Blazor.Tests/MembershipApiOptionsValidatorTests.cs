@@ -23,10 +23,17 @@ public class MembershipApiOptionsValidatorTests
         Assert.Contains("BaseAddress es obligatoria.", result.Failures!);
     }
 
+    /// <summary>
+    /// <c>/api</c> está aquí por Unix: allí parsea como URI absoluta —<c>file:///api</c>— y en
+    /// Windows no. Por eso el validador exige el esquema en lugar de conformarse con que la
+    /// dirección sea absoluta.
+    /// </summary>
     [Theory]
     [InlineData("/api")]
     [InlineData("membership.test")]
-    public void Validate_RejectsABaseAddressThatIsNotAbsolute(string baseAddress)
+    [InlineData("file:///api")]
+    [InlineData("ftp://membership.persiltech.test/")]
+    public void Validate_RejectsABaseAddressThatIsNotAnHttpUrl(string baseAddress)
     {
         var result = Validator.Validate(
             name: null, CreateOptions(options => options.BaseAddress = baseAddress));
@@ -34,6 +41,17 @@ public class MembershipApiOptionsValidatorTests
         Assert.Contains(
             result.Failures!,
             failure => failure.StartsWith("BaseAddress tiene que ser", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("http://localhost:5000/")]
+    [InlineData("https://membership.persiltech.test/")]
+    public void Validate_AcceptsAnHttpBaseAddress(string baseAddress)
+    {
+        var result = Validator.Validate(
+            name: null, CreateOptions(options => options.BaseAddress = baseAddress));
+
+        Assert.True(result.Succeeded);
     }
 
     /// <summary>

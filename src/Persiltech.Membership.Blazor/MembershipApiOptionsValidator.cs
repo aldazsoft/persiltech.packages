@@ -24,11 +24,16 @@ internal sealed class MembershipApiOptionsValidator : IValidateOptions<Membershi
         {
             failures.Add($"{nameof(MembershipApiOptions.BaseAddress)} es obligatoria.");
         }
-        else if (!Uri.TryCreate(options.BaseAddress, UriKind.Absolute, out _))
+        // Se exige el esquema y no solo que sea absoluta: en Unix, '/api' parsea como URI
+        // absoluta —'file:///api'— y en Windows no. Comprobando http o https, una dirección
+        // mal puesta se rechaza igual en las dos, y no acaba en un HttpClient apuntando al
+        // sistema de archivos.
+        else if (!Uri.TryCreate(options.BaseAddress, UriKind.Absolute, out var baseAddress)
+            || (baseAddress.Scheme != Uri.UriSchemeHttp && baseAddress.Scheme != Uri.UriSchemeHttps))
         {
             failures.Add(
-                $"{nameof(MembershipApiOptions.BaseAddress)} tiene que ser una URL absoluta. " +
-                $"Se recibió: '{options.BaseAddress}'.");
+                $"{nameof(MembershipApiOptions.BaseAddress)} tiene que ser una URL absoluta " +
+                $"http o https. Se recibió: '{options.BaseAddress}'.");
         }
 
         // Las rutas se concatenan a la dirección base, así que una que empiece por '/' se
