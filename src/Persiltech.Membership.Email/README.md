@@ -178,6 +178,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.2.0   | `ClientBaseUrls`: una dirección de vuelta por portal, elegida con la cabecera `clientId` que envía el frontal. Con una sola dirección, quien pedía su contraseña desde el portal de clientes recibía un enlace hacia el administrativo. La clave solo elige entre lo configurado; una desconocida cae en `ClientBaseUrl`. |
 | 0.1.0   | Primera versión: implementa `IMembershipEmailSender` con plantillas HTML embebidas y sustituibles, la marca y las rutas del cliente como configuración, y la entrega por `IEmailSender`. |
 
 ## Soporte
