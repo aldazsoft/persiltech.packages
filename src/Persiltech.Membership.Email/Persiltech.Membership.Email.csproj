@@ -4,7 +4,7 @@
     <PackageId>Persiltech.Membership.Email</PackageId>
     <Title>Persiltech.Membership.Email</Title>
     <Description>Adaptador de correo de Persiltech.Membership: compone los avisos de confirmación, reinicio de contraseña y cambio de correo a partir de plantillas HTML y los entrega por Persiltech.Email.</Description>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.2.0</VersionPrefix>
     <PackageTags>dotnet;csharp;email;membership;templates;smtp</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>

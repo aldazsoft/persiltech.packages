@@ -50,9 +50,15 @@ internal sealed class MembershipApplication : IAsyncDisposable
     /// desde la configuración en lugar de fijarlas con un delegado.
     /// </param>
     /// <returns>La aplicación lista para recibir peticiones.</returns>
+    /// <param name="configureServices">
+    /// Registros extra del consumidor, para las pruebas que necesitan que la aplicación aporte
+    /// algo al paquete —una implementación de <see cref="IAccessTokenClaimsProvider"/>, por
+    /// ejemplo—.
+    /// </param>
     internal static async Task<MembershipApplication> StartAsync(
         Action<IdentityOptions>? configureIdentity = null,
-        IEnumerable<KeyValuePair<string, string?>>? settings = null)
+        IEnumerable<KeyValuePair<string, string?>>? settings = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         // La conexión se mantiene abierta a propósito: SQLite descarta la base en memoria
         // en cuanto se cierra la última.
@@ -87,6 +93,8 @@ internal sealed class MembershipApplication : IAsyncDisposable
         // El paquete no participa: IdentityOptions ya es una clase de opciones, así que se
         // enlaza con el sistema de configuración de siempre.
         builder.Services.Configure<IdentityOptions>(builder.Configuration.GetSection("Identity"));
+
+        configureServices?.Invoke(builder.Services);
 
         builder.Services.AddSingleton<RecordingMessageSender>();
         builder.Services.AddSingleton<IMembershipEmailSender>(

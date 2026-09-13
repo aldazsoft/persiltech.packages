@@ -24,6 +24,8 @@ internal sealed partial class MembershipEmailOptionsValidator : IValidateOptions
         ValidateAbsoluteUrl(failures, nameof(options.ClientBaseUrl), options.ClientBaseUrl, isRequired: true);
         ValidateAbsoluteUrl(failures, nameof(options.LogoUrl), options.LogoUrl, isRequired: false);
 
+        ValidateClientBaseUrls(failures, options.ClientBaseUrls);
+
         ValidatePath(failures, nameof(options.EmailConfirmationPath), options.EmailConfirmationPath);
         ValidatePath(failures, nameof(options.PasswordResetPath), options.PasswordResetPath);
         ValidatePath(failures, nameof(options.EmailChangePath), options.EmailChangePath);
@@ -71,6 +73,40 @@ internal sealed partial class MembershipEmailOptionsValidator : IValidateOptions
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
             failures.Add($"{memberName} tiene que ser una URL absoluta http o https, y es '{value}'.");
+        }
+    }
+
+    /// <summary>
+    /// Comprueba las direcciones por portal.
+    /// </summary>
+    /// <remarks>
+    /// Una entrada con la clave en blanco no se puede seleccionar nunca, y una con la URL en
+    /// blanco mandaría el enlace a ninguna parte. Las dos son erratas de configuración que
+    /// conviene ver al arrancar y no cuando alguien pida su contraseña.
+    /// </remarks>
+    private static void ValidateClientBaseUrls(
+        List<string> failures,
+        IDictionary<string, string>? clientBaseUrls)
+    {
+        if (clientBaseUrls is null)
+        {
+            return;
+        }
+
+        foreach (var entry in clientBaseUrls)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Key))
+            {
+                failures.Add("ClientBaseUrls tiene una entrada sin clave de cliente.");
+
+                continue;
+            }
+
+            ValidateAbsoluteUrl(
+                failures,
+                $"ClientBaseUrls:{entry.Key}",
+                entry.Value,
+                isRequired: true);
         }
     }
 

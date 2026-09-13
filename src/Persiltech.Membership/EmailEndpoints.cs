@@ -110,6 +110,7 @@ public static class EmailEndpoints
 
     private static async Task<IResult> SendEmailConfirmationAsync<TUser>(
         SendEmailConfirmationRequest request,
+        HttpContext httpContext,
         UserManager<TUser> userManager,
         [FromServices] IMembershipEmailSender emailSender,
         CancellationToken cancellationToken) where TUser : ApplicationUser
@@ -126,7 +127,10 @@ public static class EmailEndpoints
             var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
 
             await emailSender.SendEmailConfirmationAsync(
-                new EmailConfirmationMessage(user.Id, user.Email!, user.FirstName, user.LastName, token),
+                new EmailConfirmationMessage(user.Id, user.Email!, user.FirstName, user.LastName, token)
+                {
+                    ClientKey = httpContext.ReadClientKey()
+                },
                 cancellationToken);
         }
 
@@ -158,6 +162,7 @@ public static class EmailEndpoints
 
     private static async Task<IResult> ChangeEmailAsync<TUser>(
         ChangeEmailRequest request,
+        HttpContext httpContext,
         ClaimsPrincipal principal,
         UserManager<TUser> userManager,
         [FromServices] IMembershipEmailSender emailSender,
@@ -178,7 +183,10 @@ public static class EmailEndpoints
         var token = await userManager.GenerateChangeEmailTokenAsync(user, request.NewEmail!);
 
         await emailSender.SendEmailChangeAsync(
-            new EmailChangeMessage(user.Id, request.NewEmail!, user.FirstName, user.LastName, token),
+            new EmailChangeMessage(user.Id, request.NewEmail!, user.FirstName, user.LastName, token)
+            {
+                ClientKey = httpContext.ReadClientKey()
+            },
             cancellationToken);
 
         return Results.NoContent();

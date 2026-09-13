@@ -22,7 +22,7 @@ internal sealed class TemplatedMembershipEmailSender(
             message.Email,
             message.FirstName,
             message.LastName,
-            BuildUrl(options.Value.EmailConfirmationPath, "email", message.Email, message.Token),
+            BuildUrl(options.Value.EmailConfirmationPath, "email", message.Email, message.Token, message.ClientKey),
             cancellationToken);
     }
 
@@ -36,7 +36,7 @@ internal sealed class TemplatedMembershipEmailSender(
             message.Email,
             message.FirstName,
             message.LastName,
-            BuildUrl(options.Value.PasswordResetPath, "email", message.Email, message.Token),
+            BuildUrl(options.Value.PasswordResetPath, "email", message.Email, message.Token, message.ClientKey),
             cancellationToken);
     }
 
@@ -50,7 +50,7 @@ internal sealed class TemplatedMembershipEmailSender(
             message.NewEmail,
             message.FirstName,
             message.LastName,
-            BuildUrl(options.Value.EmailChangePath, "newEmail", message.NewEmail, message.Token),
+            BuildUrl(options.Value.EmailChangePath, "newEmail", message.NewEmail, message.Token, message.ClientKey),
             cancellationToken);
     }
 
@@ -82,13 +82,39 @@ internal sealed class TemplatedMembershipEmailSender(
             cancellationToken);
     }
 
-    private string BuildUrl(string path, string parameterName, string parameterValue, string token)
+    /// <summary>
+    /// Arma el enlace de vuelta hacia el portal desde el que se pidió el aviso.
+    /// </summary>
+    /// <remarks>
+    /// La clave del cliente solo <em>elige</em> entre las direcciones ya configuradas. Una que
+    /// no figure cae en la de por defecto, que es lo único sensato con un valor que viaja en
+    /// una cabecera y que cualquiera puede escribir: construir el enlace con una dirección
+    /// llegada de la petición sería mandar al usuario un enlace de phishing con un testigo
+    /// válido dentro.
+    /// </remarks>
+    private string BuildUrl(
+        string path,
+        string parameterName,
+        string parameterValue,
+        string token,
+        string? clientKey)
     {
-        var baseUrl = options.Value.ClientBaseUrl.TrimEnd('/');
+        var baseUrl = ResolveBaseUrl(clientKey).TrimEnd('/');
         var normalizedPath = path.StartsWith('/') ? path : $"/{path}";
 
         return $"{baseUrl}{normalizedPath}" +
             $"?{parameterName}={Uri.EscapeDataString(parameterValue)}" +
             $"&token={Uri.EscapeDataString(token)}";
+    }
+
+    private string ResolveBaseUrl(string? clientKey)
+    {
+        var value = options.Value;
+
+        return !string.IsNullOrWhiteSpace(clientKey) &&
+               value.ClientBaseUrls.TryGetValue(clientKey, out var configured) &&
+               !string.IsNullOrWhiteSpace(configured)
+            ? configured
+            : value.ClientBaseUrl;
     }
 }

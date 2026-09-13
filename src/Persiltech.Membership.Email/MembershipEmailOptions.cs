@@ -27,6 +27,28 @@ public sealed class MembershipEmailOptions
     public string ClientBaseUrl { get; set; } = string.Empty;
 
     /// <summary>
+    /// Raíz de la aplicación cliente <em>por cada portal</em>, cuando hay más de uno. La clave
+    /// es el identificador que el frontal envía en la cabecera <c>clientId</c>. Opcional.
+    /// </summary>
+    /// <remarks>
+    /// Un producto con dos portales —el administrativo y el de clientes, por ejemplo— no puede
+    /// tener una sola dirección de vuelta: quien pida su contraseña desde uno acabaría
+    /// aterrizando en el otro. Aquí se declara la de cada uno.
+    /// <para>
+    /// La clave llega en una cabecera, que cualquiera puede escribir, así que <b>solo elige
+    /// entre lo que ya está configurado</b>: un valor que no figure aquí cae en
+    /// <see cref="ClientBaseUrl"/>. Nunca se construye un enlace con una dirección que venga de
+    /// la petición, que sería regalar un enlace de phishing con un testigo válido dentro.
+    /// </para>
+    /// <para>
+    /// Cada valor tiene que ser una URL absoluta <c>http</c> o <c>https</c>, igual que
+    /// <see cref="ClientBaseUrl"/>, y se valida al arrancar.
+    /// </para>
+    /// </remarks>
+    public IDictionary<string, string> ClientBaseUrls { get; set; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Ruta de la pantalla que confirma el correo. Por defecto, <c>/confirm-email</c>.
     /// </summary>
     public string EmailConfirmationPath { get; set; } = "/confirm-email";

@@ -53,15 +53,35 @@ public class DependencyInjectionTests
         Assert.DoesNotContain(services, service => service.ServiceType == typeof(IAuthenticationSchemeProvider));
     }
 
+    /// <summary>
+    /// Con ámbito, y no único a propósito.
+    /// </summary>
+    /// <remarks>
+    /// El emisor resuelve <see cref="IAccessTokenClaimsProvider"/>, y una aportación típica lee
+    /// de una base de datos. Registrado como único capturaría un contexto con ámbito y lo
+    /// reutilizaría entre peticiones, que es de los fallos más difíciles de ver.
+    /// </remarks>
     [Fact]
-    public void AddMembershipServicesRegistersTheTokenFactoryAsSingleton()
+    public void AddMembershipServicesRegistersTheTokenFactoryAsScoped()
     {
         var descriptor = Assert.Single(
             Register(),
             service => service.ServiceType == typeof(IAccessTokenFactory));
 
         Assert.Equal(typeof(JwtAccessTokenFactory), descriptor.ImplementationType);
-        Assert.Equal(ServiceLifetime.Singleton, descriptor.Lifetime);
+        Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime);
+    }
+
+    /// <summary>
+    /// El paquete no registra ninguna aportación: sin consumidor que la ponga, el emisor
+    /// recibe una colección vacía y el token sale como siempre.
+    /// </summary>
+    [Fact]
+    public void AddMembershipServicesRegistersNoClaimsProviderOfItsOwn()
+    {
+        Assert.DoesNotContain(
+            Register(),
+            service => service.ServiceType == typeof(IAccessTokenClaimsProvider));
     }
 
     [Fact]

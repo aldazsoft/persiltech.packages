@@ -93,7 +93,9 @@ public static class DependencyInjection
             .Configure(configureJwtOptions)
             .ValidateOnStart();
 
-        services.AddSingleton<IAccessTokenFactory, JwtAccessTokenFactory>();
+        // Con ámbito, no único: las aportaciones de IAccessTokenClaimsProvider suelen leer de
+        // una base de datos, y un servicio único capturaría un contexto con ámbito.
+        services.AddScoped<IAccessTokenFactory, JwtAccessTokenFactory>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService<TUser>>();
 
         return services;

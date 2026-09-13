@@ -141,7 +141,7 @@ public static class SessionEndpoints
 
         return Results.Ok(
             new LoginUserResponse(
-                accessTokenFactory.Create(user, [.. roles]),
+                await accessTokenFactory.CreateAsync(user, [.. roles], cancellationToken),
                 rotated.RefreshToken));
     }
 

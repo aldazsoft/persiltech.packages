@@ -162,7 +162,9 @@ public static class MembershipEndpoints
         var refreshToken = await refreshTokenService.IssueAsync(user.Id, cancellationToken);
 
         return Results.Ok(
-            new LoginUserResponse(accessTokenFactory.Create(user, [.. roles]), refreshToken));
+            new LoginUserResponse(
+                await accessTokenFactory.CreateAsync(user, [.. roles], cancellationToken),
+                refreshToken));
     }
 
     private static async Task<bool> VerifySecondFactorAsync<TUser>(

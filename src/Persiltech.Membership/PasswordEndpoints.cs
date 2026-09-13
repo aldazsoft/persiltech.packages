@@ -124,6 +124,7 @@ public static class PasswordEndpoints
 
     private static async Task<IResult> ForgotPasswordAsync<TUser>(
         ForgotPasswordRequest request,
+        HttpContext httpContext,
         UserManager<TUser> userManager,
         [FromServices] IMembershipEmailSender emailSender,
         CancellationToken cancellationToken) where TUser : ApplicationUser
@@ -140,7 +141,10 @@ public static class PasswordEndpoints
             var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
             await emailSender.SendPasswordResetAsync(
-                new PasswordResetMessage(user.Id, user.Email!, user.FirstName, user.LastName, token),
+                new PasswordResetMessage(user.Id, user.Email!, user.FirstName, user.LastName, token)
+                {
+                    ClientKey = httpContext.ReadClientKey()
+                },
                 cancellationToken);
         }
 

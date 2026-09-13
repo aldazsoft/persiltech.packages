@@ -24,6 +24,60 @@ public sealed class MembershipEmailOptionsValidatorTests : IDisposable
     }
 
     [Fact]
+    public void Validate_AcceptsTheUrlsOfEveryPortal()
+    {
+        var result = Validator.Validate(name: null, CreateOptions(options =>
+        {
+            options.ClientBaseUrls["MegadBlazorAdmin"] = "https://admin.example.com";
+            options.ClientBaseUrls["MegadBlazorCustomer"] = "https://clientes.example.com";
+        }));
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("/reset")]
+    [InlineData("ftp://clientes.example.com")]
+    public void Validate_RejectsAPortalUrlThatIsNotAbsoluteHttp(string url)
+    {
+        var result = Validator.Validate(name: null, CreateOptions(options =>
+            options.ClientBaseUrls["MegadBlazorCustomer"] = url));
+
+        Assert.Contains(
+            result.Failures!,
+            failure => failure.StartsWith("ClientBaseUrls:MegadBlazorCustomer", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Validate_RejectsAPortalWithoutKey()
+    {
+        var result = Validator.Validate(name: null, CreateOptions(options =>
+            options.ClientBaseUrls["  "] = "https://clientes.example.com"));
+
+        Assert.Contains("ClientBaseUrls tiene una entrada sin clave de cliente.", result.Failures!);
+    }
+
+    /// <summary>
+    /// Los fallos se acumulan: un despliegue con dos portales mal escritos los ve los dos en el
+    /// primer arranque, no de uno en uno a base de reinicios.
+    /// </summary>
+    [Fact]
+    public void Validate_ReportsEveryBadPortalAtOnce()
+    {
+        var result = Validator.Validate(name: null, CreateOptions(options =>
+        {
+            options.ClientBaseUrls["Uno"] = "no-es-una-url";
+            options.ClientBaseUrls["Otro"] = "tampoco";
+        }));
+
+        Assert.Equal(
+            2,
+            result.Failures!.Count(f => f.StartsWith("ClientBaseUrls:", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public void Validate_RejectsAnEmptyBrandName()
     {
         var result = Validator.Validate(name: null, CreateOptions(options => options.BrandName = "  "));
