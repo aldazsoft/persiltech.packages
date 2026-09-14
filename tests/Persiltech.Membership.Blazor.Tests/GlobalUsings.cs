@@ -1,6 +1,7 @@
 global using Microsoft.JSInterop;
 global using NSubstitute;
 global using Persiltech.Membership.Blazor;
+global using Persiltech.Membership.Blazor.Components;
 global using Persiltech.Membership.Blazor.Contracts;
 global using Persiltech.Membership.Blazor.Services;
 global using System.Net;

@@ -8,7 +8,7 @@
     <!-- Preliberacion: el identificador ya lo ocupaba el paquete del monorepo viejo, que
          llego a 1.0.1. Este es su sucesor y sustituye la API entera, de ahi el mayor; el
          sufijo dice que la superficie todavia se mueve. -->
-    <VersionSuffix>preview.2</VersionSuffix>
+    <VersionSuffix>preview.3</VersionSuffix>
     <PackageTags>dotnet;csharp;blazor;webassembly;mudblazor;membership;identity;jwt;authentication</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
