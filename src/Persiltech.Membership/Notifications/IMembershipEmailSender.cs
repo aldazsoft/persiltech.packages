@@ -38,4 +38,23 @@ public interface IMembershipEmailSender
     /// <param name="cancellationToken">Testigo de cancelación de la petición.</param>
     /// <returns>La tarea que representa el envío.</returns>
     Task SendEmailChangeAsync(EmailChangeMessage message, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Avisa de que la cuenta acaba de quedar bloqueada por intentos fallidos.
+    /// </summary>
+    /// <remarks>
+    /// Es el único aviso que no responde a una acción de su destinatario: le llega precisamente
+    /// porque <em>otro</em> pudo haber estado intentando entrar. Ver
+    /// <see cref="AccountLockedMessage"/> para por qué esto va por correo y no en la respuesta
+    /// del inicio de sesión.
+    /// <para>
+    /// El paquete lo invoca en el mismo momento en que salta el bloqueo, y <b>trata un fallo
+    /// aquí como no crítico</b>: si el envío revienta, el inicio de sesión responde igual. Un
+    /// servidor de correo caído no puede dejar sin autenticar a nadie.
+    /// </para>
+    /// </remarks>
+    /// <param name="message">Datos del aviso, sin testigo alguno.</param>
+    /// <param name="cancellationToken">Testigo de cancelación de la petición.</param>
+    /// <returns>La tarea que representa el envío.</returns>
+    Task SendAccountLockedAsync(AccountLockedMessage message, CancellationToken cancellationToken);
 }

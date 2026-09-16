@@ -305,11 +305,31 @@ trae ninguna implementación.
 | `Task SendEmailConfirmationAsync(EmailConfirmationMessage message, CancellationToken cancellationToken)`   | Confirmación del correo de una cuenta nueva.   |
 | `Task SendPasswordResetAsync(PasswordResetMessage message, CancellationToken cancellationToken)`           | Reinicio de contraseña olvidada.               |
 | `Task SendEmailChangeAsync(EmailChangeMessage message, CancellationToken cancellationToken)`               | Confirmación de un cambio de correo.           |
+| `Task SendAccountLockedAsync(AccountLockedMessage message, CancellationToken cancellationToken)`           | La cuenta acaba de quedar bloqueada.           |
 
 El paquete **no redacta el mensaje**: entrega los datos y el testigo, y quien compone el
 asunto, el cuerpo y la URL de vuelta es el consumidor. Redactarlo aquí obligaría al paquete
 a decidir plantilla, formato e idioma, y a inventarse el patrón de ruta de la pantalla que
 recibe el testigo, que es de la aplicación.
+
+### El aviso de bloqueo
+
+`SendAccountLockedAsync` tiene tres propiedades que lo separan del resto, y las tres son
+deliberadas:
+
+| Propiedad | Por qué |
+| --- | --- |
+| No responde a una acción de su destinatario | Le llega porque *otro* pudo estar intentando entrar. Es su única señal: la respuesta del inicio de sesión no distingue «contraseña incorrecta» de «cuenta bloqueada», porque distinguirlo confirmaría que ese correo tiene cuenta. |
+| `AccountLockedMessage` **no lleva testigo** | Con un enlace de reinicio dentro, fallar la contraseña de alguien bastaría para mandarle uno válido que no ha pedido. |
+| El puerto es **opcional** en el inicio de sesión | Se resuelve como `IMembershipEmailSender?`. Quien no registre emisor sigue pudiendo autenticarse, y un fallo al enviar se registra y se traga: un servidor de correo caído no puede dejar sin autenticar a nadie. |
+
+Sale **una sola vez por bloqueo**. Lo garantiza el orden del endpoint, que comprueba el
+bloqueo antes que la contraseña: los intentos que llegan con la cuenta ya bloqueada se cortan
+antes de contar nada, así que solo el que hace saltar el bloqueo lo encuentra recién activado.
+
+`LockoutMinutes` son los minutos restantes redondeados hacia arriba, nunca menos de uno. Se
+entrega la duración y no el instante en que termina para no depender de la zona horaria de
+quien lee.
 
 ## IMembershipSmsSender
 

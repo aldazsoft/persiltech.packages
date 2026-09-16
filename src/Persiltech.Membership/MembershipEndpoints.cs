@@ -107,11 +107,17 @@ public static class MembershipEndpoints
 
     private static async Task<IResult> LoginUserAsync<TUser>(
         LoginUserRequest request,
+        HttpContext httpContext,
         UserManager<TUser> userManager,
         IAccessTokenFactory accessTokenFactory,
         IRefreshTokenService refreshTokenService,
         IOptions<IdentityOptions> identityOptions,
-        CancellationToken cancellationToken) where TUser : ApplicationUser
+        [FromServices] ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken,
+        // Opcional a propósito, al contrario que en los endpoints de contraseña o correo: allí
+        // el envío es el objeto de la petición y sin él no hay nada que hacer, mientras que
+        // aquí es un aviso añadido. Quien no registre un emisor sigue pudiendo autenticarse.
+        [FromServices] IMembershipEmailSender? emailSender = null) where TUser : ApplicationUser
     {
         if (!RequestValidation.TryValidate(request, out var errors))
         {
@@ -137,6 +143,9 @@ public static class MembershipEndpoints
         {
             await userManager.AccessFailedAsync(user);
 
+            await NotifyIfJustLockedAsync(
+                user, userManager, emailSender, loggerFactory, httpContext, cancellationToken);
+
             return Results.ValidationProblem(InvalidCredentials);
         }
 
@@ -144,6 +153,9 @@ public static class MembershipEndpoints
             !await VerifySecondFactorAsync(user, request.TwoFactorCode, userManager))
         {
             await userManager.AccessFailedAsync(user);
+
+            await NotifyIfJustLockedAsync(
+                user, userManager, emailSender, loggerFactory, httpContext, cancellationToken);
 
             return Results.ValidationProblem(TwoFactorRequired);
         }
@@ -165,6 +177,79 @@ public static class MembershipEndpoints
             new LoginUserResponse(
                 await accessTokenFactory.CreateAsync(user, [.. roles], cancellationToken),
                 refreshToken));
+    }
+
+    /// <summary>
+    /// Avisa por correo si el intento que se acaba de contar dejó la cuenta bloqueada.
+    /// </summary>
+    /// <remarks>
+    /// Llegar aquí ya implica que la cuenta <em>no</em> estaba bloqueada: el bloqueo se
+    /// comprueba antes que la contraseña y corta la petición. Así que si ahora lo está, es que
+    /// acaba de saltar, y el aviso sale una sola vez por bloqueo y no en cada intento posterior.
+    /// <para>
+    /// Nada de lo que ocurra aquí cambia la respuesta del inicio de sesión. Un servidor de
+    /// correo caído no puede impedir autenticarse, así que el fallo se registra y se sigue.
+    /// </para>
+    /// </remarks>
+    private static async Task NotifyIfJustLockedAsync<TUser>(
+        TUser user,
+        UserManager<TUser> userManager,
+        IMembershipEmailSender? emailSender,
+        ILoggerFactory loggerFactory,
+        HttpContext httpContext,
+        CancellationToken cancellationToken) where TUser : ApplicationUser
+    {
+        if (emailSender is null || !await userManager.IsLockedOutAsync(user))
+        {
+            return;
+        }
+
+        var lockoutEnd = await userManager.GetLockoutEndDateAsync(user);
+
+        try
+        {
+            await emailSender.SendAccountLockedAsync(
+                new AccountLockedMessage(
+                    user.Id,
+                    user.Email!,
+                    user.FirstName,
+                    user.LastName,
+                    RemainingMinutes(lockoutEnd))
+                {
+                    ClientKey = httpContext.ReadClientKey()
+                },
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            loggerFactory
+                .CreateLogger(typeof(MembershipEndpoints))
+                .LogError(
+                    exception,
+                    "No se pudo avisar por correo del bloqueo de la cuenta {UserId}.",
+                    user.Id);
+        }
+    }
+
+    /// <summary>
+    /// Minutos que queda bloqueada, redondeados hacia arriba y nunca menos de uno.
+    /// </summary>
+    /// <remarks>
+    /// Redondear hacia abajo daría «vuelve en 0 minutos» en cuanto la cuenta lleva unos
+    /// segundos bloqueada, que es peor que no decir nada.
+    /// </remarks>
+    private static int RemainingMinutes(DateTimeOffset? lockoutEnd)
+    {
+        if (lockoutEnd is null)
+        {
+            return 1;
+        }
+
+        var remaining = lockoutEnd.Value - DateTimeOffset.UtcNow;
+
+        return remaining <= TimeSpan.Zero
+            ? 1
+            : (int)Math.Ceiling(remaining.TotalMinutes);
     }
 
     private static async Task<bool> VerifySecondFactorAsync<TUser>(

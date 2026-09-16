@@ -4,7 +4,7 @@
     <PackageId>Persiltech.Membership</PackageId>
     <Title>Persiltech.Membership</Title>
     <Description>Sistema de membresía reutilizable para aplicaciones ASP.NET Core: registro y autenticación de usuarios sobre ASP.NET Core Identity, con endpoints de Minimal API que el consumidor monta en la ruta que elija y emisión de un JSON Web Token firmado con HMAC-SHA256.</Description>
-    <VersionPrefix>0.8.0</VersionPrefix>
+    <VersionPrefix>0.9.0</VersionPrefix>
     <PackageTags>dotnet;csharp;aspnetcore;identity;authentication;jwt;minimal-api;entity-framework-core</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -25,6 +25,14 @@
 
   <PropertyGroup>
     <PackageReleaseNotes>
+      v0.9.0
+      - Nuevo aviso por correo cuando una cuenta queda bloqueada por intentos fallidos: IMembershipEmailSender.SendAccountLockedAsync
+      - La respuesta del inicio de sesion sigue sin distinguir "contrasena incorrecta" de "cuenta bloqueada", para no confirmar que un correo tiene cuenta; quien controla el buzon si se entera, y de paso ve que alguien esta probando contrasenas
+      - El aviso no lleva testigo alguno: con uno, fallar la contrasena de alguien bastaria para mandarle un enlace de reinicio que no ha pedido
+      - Sale una sola vez por bloqueo, no en cada intento posterior, y un fallo al enviarlo no altera la respuesta del inicio de sesion
+      - El emisor de correo es opcional en el inicio de sesion: quien no registre ninguno sigue pudiendo autenticarse
+      - CAMBIO QUE ROMPE: IMembershipEmailSender gana un metodo. Quien la implemente por su cuenta tiene que anadirlo
+
       v0.5.0
       - Primera publicación en nuget.org; las versiones 0.1.0 a 0.4.0 fueron internas
       - Registro y autenticación sobre ASP.NET Core Identity, con emisión de JWT firmado con HMAC-SHA256

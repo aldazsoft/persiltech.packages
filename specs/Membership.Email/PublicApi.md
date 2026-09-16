@@ -121,9 +121,15 @@ Cada aviso son tres archivos, embebidos en el ensamblado bajo `Templates/`:
 | Confirmación de correo | `EmailConfirmation` | `EmailConfirmation.subject.txt`, `.html`, `.txt`                          |
 | Reinicio de contraseña | `PasswordReset`     | `PasswordReset.subject.txt`, `.html`, `.txt`                              |
 | Cambio de correo       | `EmailChange`       | `EmailChange.subject.txt`, `.html`, `.txt`                                |
+| Bloqueo de la cuenta   | `AccountLocked`     | `AccountLocked.subject.txt`, `.html`, `.txt`                              |
 
 El `.html` de cada aviso es **solo el interior**: el encabezado, el ancho de 600 píxeles y el
-pie viven una única vez en `Layout.html`, que envuelve a los tres.
+pie viven una única vez en `Layout.html`, que envuelve a los cuatro.
+
+`AccountLocked` es el único que **no usa `{{ActionUrl}}`**: su mensaje no lleva testigo, así
+que no hay pantalla a la que dirigir a nadie. A cambio es el único que usa
+`{{LockoutMinutes}}`. El compositor falla si una plantilla reclama un marcador sin valor, de
+modo que confundir uno con otro se ve al componer y no al recibir el correo.
 
 ## Marcadores
 
@@ -225,3 +231,4 @@ No forman parte del contrato y pueden cambiar sin subir la versión mayor. Viven
 | `EmailConfirmation.{subject.txt,html,txt}` | `src/Persiltech.Membership.Email/Templates/` |
 | `PasswordReset.{subject.txt,html,txt}`     | `src/Persiltech.Membership.Email/Templates/` |
 | `EmailChange.{subject.txt,html,txt}`       | `src/Persiltech.Membership.Email/Templates/` |
+| `AccountLocked.{subject.txt,html,txt}`     | `src/Persiltech.Membership.Email/Templates/` |

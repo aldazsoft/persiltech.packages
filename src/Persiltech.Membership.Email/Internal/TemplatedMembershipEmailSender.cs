@@ -54,22 +54,50 @@ internal sealed class TemplatedMembershipEmailSender(
             cancellationToken);
     }
 
+    /// <inheritdoc />
+    public Task SendAccountLockedAsync(AccountLockedMessage message, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        // Sin enlace de vuelta: este aviso no lleva testigo, así que no hay pantalla a la que
+        // mandar a nadie. Ver AccountLockedMessage para por qué no debe llevarlo.
+        return SendAsync(
+            "AccountLocked",
+            message.Email,
+            message.FirstName,
+            message.LastName,
+            actionUrl: null,
+            cancellationToken,
+            extraValues: new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["LockoutMinutes"] = message.LockoutMinutes.ToString(CultureInfo.InvariantCulture)
+            });
+    }
+
     private Task SendAsync(
         string templateName,
         string to,
         string firstName,
         string lastName,
-        string actionUrl,
-        CancellationToken cancellationToken)
+        string? actionUrl,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, string?>? extraValues = null)
     {
-        var rendered = templateRenderer.Render(templateName, new Dictionary<string, string?>(StringComparer.Ordinal)
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             ["FirstName"] = firstName,
             ["LastName"] = lastName,
             ["FullName"] = $"{firstName} {lastName}".Trim(),
             ["Email"] = to,
             ["ActionUrl"] = actionUrl
-        });
+        };
+
+        foreach (var entry in extraValues ?? new Dictionary<string, string?>(StringComparer.Ordinal))
+        {
+            values[entry.Key] = entry.Value;
+        }
+
+        var rendered = templateRenderer.Render(templateName, values);
 
         return emailSender.SendAsync(
             new EmailMessage

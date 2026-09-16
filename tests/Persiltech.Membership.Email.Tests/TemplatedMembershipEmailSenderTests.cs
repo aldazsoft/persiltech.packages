@@ -121,8 +121,64 @@ public class TemplatedMembershipEmailSenderTests
             () => sender.SendEmailConfirmationAsync(null!, CancellationToken.None));
     }
 
+    [Fact]
+    public async Task SendAccountLockedAsync_SendsWhatTheTemplateComposed()
+    {
+        var sender = CreateSender();
+
+        await sender.SendAccountLockedAsync(CreateLockedMessage(), CancellationToken.None);
+
+        Assert.Equal("AccountLocked", RenderedTemplateName);
+
+        await EmailSender.Received(1).SendAsync(
+            Arg.Is<EmailMessage>(message => message.To == "juan.perez@example.com"),
+            Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// El aviso del bloqueo es el único sin enlace de vuelta.
+    /// </summary>
+    /// <remarks>
+    /// No lleva testigo a propósito: con uno, bastaría con fallar la contraseña de alguien para
+    /// que le llegara al buzón un enlace de reinicio válido que no ha pedido.
+    /// </remarks>
+    [Fact]
+    public async Task SendAccountLockedAsync_DoesNotBuildAnyLink()
+    {
+        var sender = CreateSender();
+
+        await sender.SendAccountLockedAsync(CreateLockedMessage(), CancellationToken.None);
+
+        Assert.Null(RenderedValues!["ActionUrl"]);
+    }
+
+    [Fact]
+    public async Task SendAccountLockedAsync_PassesHowLongTheLockoutLasts()
+    {
+        var sender = CreateSender();
+
+        await sender.SendAccountLockedAsync(CreateLockedMessage(), CancellationToken.None);
+
+        Assert.Equal("15", RenderedValues!["LockoutMinutes"]);
+    }
+
+    [Fact]
+    public async Task SendAccountLockedAsync_PassesTheNameOfTheAccount()
+    {
+        var sender = CreateSender();
+
+        await sender.SendAccountLockedAsync(CreateLockedMessage(), CancellationToken.None);
+
+        Assert.Equal("Juan", RenderedValues!["FirstName"]);
+        Assert.Equal("Juan Pérez", RenderedValues["FullName"]);
+        Assert.Equal("juan.perez@example.com", RenderedValues["Email"]);
+    }
+
     private static EmailConfirmationMessage CreateConfirmationMessage() =>
         new("42", "juan.perez@example.com", "Juan", "Pérez", Token);
+
+    private static AccountLockedMessage CreateLockedMessage() =>
+        new("42", "juan.perez@example.com", "Juan", "Pérez", 15);
 
     private TemplatedMembershipEmailSender CreateSender(Action<MembershipEmailOptions>? configureOptions = null)
     {

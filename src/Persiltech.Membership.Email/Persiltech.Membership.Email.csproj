@@ -4,7 +4,7 @@
     <PackageId>Persiltech.Membership.Email</PackageId>
     <Title>Persiltech.Membership.Email</Title>
     <Description>Adaptador de correo de Persiltech.Membership: compone los avisos de confirmación, reinicio de contraseña y cambio de correo a partir de plantillas HTML y los entrega por Persiltech.Email.</Description>
-    <VersionPrefix>0.2.0</VersionPrefix>
+    <VersionPrefix>0.3.0</VersionPrefix>
     <PackageTags>dotnet;csharp;email;membership;templates;smtp</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -25,6 +25,12 @@
 
   <PropertyGroup>
     <PackageReleaseNotes>
+      v0.3.0
+      - Nueva plantilla AccountLocked, para el aviso de bloqueo de cuenta que estrena Persiltech.Membership 0.9.0
+      - Es el unico aviso sin enlace de vuelta: no lleva testigo, asi que no hay pantalla a la que mandar a nadie
+      - Dice cuantos minutos dura el bloqueo, en lugar de a que hora termina, para no depender de la zona horaria de quien lee
+      - Como los demas, se puede sustituir por archivo con MembershipEmailOptions.TemplatesDirectory
+
       v0.1.0
       - Primera versión: implementa IMembershipEmailSender de Persiltech.Membership con plantillas HTML
       - La marca, los colores y las rutas del cliente son configuración, no código

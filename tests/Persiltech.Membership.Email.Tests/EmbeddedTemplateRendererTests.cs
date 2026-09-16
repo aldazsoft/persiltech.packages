@@ -132,6 +132,50 @@ public sealed class EmbeddedTemplateRendererTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => renderer.Render("NoExiste", CreateValues()));
     }
 
+    /// <summary>
+    /// Las cuatro plantillas del paquete están embebidas y se componen.
+    /// </summary>
+    /// <remarks>
+    /// Cubre el fallo que solo se vería en producción: añadir un aviso, olvidar uno de sus tres
+    /// archivos o escribir mal su nombre. El compositor los busca por nombre dentro del
+    /// ensamblado, así que un archivo que no viaje no falla al compilar, falla al enviar.
+    /// </remarks>
+    [Theory]
+    [InlineData("EmailConfirmation")]
+    [InlineData("PasswordReset")]
+    [InlineData("EmailChange")]
+    [InlineData("AccountLocked")]
+    public void Render_ComposesEveryTemplateOfThePackage(string templateName)
+    {
+        var renderer = CreateRenderer();
+
+        var rendered = renderer.Render(templateName, CreateValues());
+
+        Assert.False(string.IsNullOrWhiteSpace(rendered.Subject));
+        Assert.False(string.IsNullOrWhiteSpace(rendered.TextBody));
+        Assert.StartsWith("<!DOCTYPE html", rendered.HtmlBody, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// El aviso del bloqueo dice cuánto dura y no lleva ningún enlace.
+    /// </summary>
+    [Fact]
+    public void Render_TheLockoutNoticeStatesTheDurationAndCarriesNoLink()
+    {
+        var renderer = CreateRenderer();
+
+        var values = CreateValues();
+        values["ActionUrl"] = null;
+        values["LockoutMinutes"] = "15";
+
+        var rendered = renderer.Render("AccountLocked", values);
+
+        Assert.Contains("15", rendered.TextBody, StringComparison.Ordinal);
+        Assert.Contains("15", rendered.HtmlBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("token=", rendered.HtmlBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("token=", rendered.TextBody, StringComparison.Ordinal);
+    }
+
     private static EmbeddedTemplateRenderer CreateRenderer(Action<MembershipEmailOptions>? configureOptions = null)
     {
         var options = new MembershipEmailOptions
@@ -152,7 +196,10 @@ public sealed class EmbeddedTemplateRendererTests : IDisposable
             ["LastName"] = "Pérez",
             ["FullName"] = $"{firstName} Pérez",
             ["Email"] = "juan.perez@example.com",
-            ["ActionUrl"] = "https://app.example.com/confirm-email?email=juan%40example.com&token=abc"
+            ["ActionUrl"] = "https://app.example.com/confirm-email?email=juan%40example.com&token=abc",
+            // Solo lo usa AccountLocked. Un valor que ninguna plantilla reclama se ignora, pero
+            // un marcador sin valor hace fallar al compositor, así que va en el conjunto común.
+            ["LockoutMinutes"] = "15"
         };
 
     private void WriteTemplate(string fileName, string content)

@@ -58,7 +58,8 @@ internal sealed class MembershipApplication : IAsyncDisposable
     internal static async Task<MembershipApplication> StartAsync(
         Action<IdentityOptions>? configureIdentity = null,
         IEnumerable<KeyValuePair<string, string?>>? settings = null,
-        Action<IServiceCollection>? configureServices = null)
+        Action<IServiceCollection>? configureServices = null,
+        bool registerMessageSender = true)
     {
         // La conexión se mantiene abierta a propósito: SQLite descarta la base en memoria
         // en cuanto se cierra la última.
@@ -97,10 +98,17 @@ internal sealed class MembershipApplication : IAsyncDisposable
         configureServices?.Invoke(builder.Services);
 
         builder.Services.AddSingleton<RecordingMessageSender>();
-        builder.Services.AddSingleton<IMembershipEmailSender>(
-            provider => provider.GetRequiredService<RecordingMessageSender>());
-        builder.Services.AddSingleton<IMembershipSmsSender>(
-            provider => provider.GetRequiredService<RecordingMessageSender>());
+
+        // Se puede dejar sin registrar para comprobar lo que hace el paquete cuando el
+        // consumidor no aporta emisor. No vale con quitarlo desde configureServices: eso corre
+        // antes que estas líneas, así que el registro volvería a entrar después.
+        if (registerMessageSender)
+        {
+            builder.Services.AddSingleton<IMembershipEmailSender>(
+                provider => provider.GetRequiredService<RecordingMessageSender>());
+            builder.Services.AddSingleton<IMembershipSmsSender>(
+                provider => provider.GetRequiredService<RecordingMessageSender>());
+        }
 
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

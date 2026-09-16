@@ -102,10 +102,18 @@ Cada aviso son tres archivos embebidos en el ensamblado, bajo `Templates/`:
 | Confirmación de correo | `EmailConfirmation` | `.subject.txt`, `.html`, `.txt`                     |
 | Reinicio de contraseña | `PasswordReset`     | `.subject.txt`, `.html`, `.txt`                     |
 | Cambio de correo       | `EmailChange`       | `.subject.txt`, `.html`, `.txt`                     |
+| Bloqueo de la cuenta   | `AccountLocked`     | `.subject.txt`, `.html`, `.txt`                     |
 
 El `.html` de cada aviso es solo el interior: el encabezado, el ancho de 600 píxeles y el pie
-viven una vez en `Layout.html`, que envuelve a los tres. El `.txt` es la parte alternativa en
+viven una vez en `Layout.html`, que envuelve a los cuatro. El `.txt` es la parte alternativa en
 texto plano, que un correo transaccional no debería omitir.
+
+**`AccountLocked` es el único sin enlace de vuelta.** No lleva testigo —con uno, fallar la
+contraseña de alguien bastaría para mandarle un enlace de reinicio que no ha pedido—, así que
+no hay pantalla a la que dirigir a nadie y el marcador `{{ActionUrl}}` no aparece en su
+plantilla. A cambio dispone de `{{LockoutMinutes}}`, los minutos que dura el bloqueo. Se manda
+la duración y no la hora a la que termina para no tener que acertar con la zona horaria de
+quien lo lee.
 
 ### Cambiar el diseño
 
@@ -178,6 +186,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.3.0   | Nueva plantilla `AccountLocked`, para el aviso de bloqueo de cuenta que estrena `Persiltech.Membership` 0.9.0. Es la única sin enlace de vuelta: no lleva testigo, así que no hay pantalla a la que dirigir a nadie. Dispone de `{{LockoutMinutes}}` y dice cuánto dura el bloqueo en lugar de a qué hora termina, para no depender de la zona horaria de quien lo lee. |
 | 0.2.0   | `ClientBaseUrls`: una dirección de vuelta por portal, elegida con la cabecera `clientId` que envía el frontal. Con una sola dirección, quien pedía su contraseña desde el portal de clientes recibía un enlace hacia el administrativo. La clave solo elige entre lo configurado; una desconocida cae en `ClientBaseUrl`. |
 | 0.1.0   | Primera versión: implementa `IMembershipEmailSender` con plantillas HTML embebidas y sustituibles, la marca y las rutas del cliente como configuración, y la entrega por `IEmailSender`. |
 

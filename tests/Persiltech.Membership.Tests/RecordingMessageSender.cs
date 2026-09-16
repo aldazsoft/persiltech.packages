@@ -13,6 +13,13 @@ internal sealed class RecordingMessageSender : IMembershipEmailSender, IMembersh
     private readonly List<PasswordResetMessage> PasswordResets = [];
     private readonly List<EmailChangeMessage> EmailChanges = [];
     private readonly List<PhoneChangeMessage> PhoneChanges = [];
+    private readonly List<AccountLockedMessage> AccountLockouts = [];
+
+    /// <summary>
+    /// Si el envío del aviso de bloqueo debe fallar, para comprobar que eso no tumba el
+    /// inicio de sesión.
+    /// </summary>
+    internal bool FailAccountLocked { get; set; }
 
     /// <summary>Confirmaciones de correo entregadas.</summary>
     internal IReadOnlyList<EmailConfirmationMessage> Confirmations => EmailConfirmations;
@@ -25,6 +32,9 @@ internal sealed class RecordingMessageSender : IMembershipEmailSender, IMembersh
 
     /// <summary>Cambios de teléfono entregados.</summary>
     internal IReadOnlyList<PhoneChangeMessage> Phones => PhoneChanges;
+
+    /// <summary>Avisos de bloqueo de cuenta entregados.</summary>
+    internal IReadOnlyList<AccountLockedMessage> Lockouts => AccountLockouts;
 
     /// <inheritdoc />
     public Task SendEmailConfirmationAsync(EmailConfirmationMessage message, CancellationToken cancellationToken)
@@ -54,6 +64,19 @@ internal sealed class RecordingMessageSender : IMembershipEmailSender, IMembersh
     public Task SendPhoneChangeAsync(PhoneChangeMessage message, CancellationToken cancellationToken)
     {
         PhoneChanges.Add(message);
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task SendAccountLockedAsync(AccountLockedMessage message, CancellationToken cancellationToken)
+    {
+        if (FailAccountLocked)
+        {
+            throw new InvalidOperationException("El servidor de correo no responde.");
+        }
+
+        AccountLockouts.Add(message);
 
         return Task.CompletedTask;
     }

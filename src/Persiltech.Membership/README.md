@@ -1,5 +1,3 @@
-| 0.8.0   | `IAccessTokenClaimsProvider`: el consumidor puede añadir sus propias reclamaciones al token, que es lo que necesita un producto multiinquilino para llevar en la sesión de quién es. No puede sobrescribir `Name`, `Role` ni `Fullname`, porque eso sería una vía para concederse un rol. El emisor del token pasa de único a **con ámbito**, ya que esas aportaciones suelen salir de una consulta. Los tres avisos de correo ganan `ClientKey`, que el paquete rellena con la cabecera `clientId` para que quien los redacte sepa desde qué portal se pidieron. |
-| 0.7.0   | Las opciones dejan de llevar anotaciones de datos: `JwtOptions` pasa a ser una clase plana y la validación la hace `JwtOptionsValidator`, un `IValidateOptions<JwtOptions>` que sigue corriendo con `ValidateOnStart()`. Devuelve todos los fallos de una vez en lugar de cortar en el primero, y mide `SecurityKey` en bytes UTF-8 —que es lo que cuenta HMAC-SHA256— en lugar de caracteres. El comportamiento al arrancar no cambia; sí lo hace la superficie pública, porque las anotaciones eran parte de ella. |
 # Persiltech.Membership
 
 [![NuGet](https://img.shields.io/nuget/v/Persiltech.Membership.svg)](https://www.nuget.org/packages/Persiltech.Membership/)
@@ -245,6 +243,7 @@ public interface IMembershipEmailSender
     Task SendEmailConfirmationAsync(EmailConfirmationMessage message, CancellationToken cancellationToken);
     Task SendPasswordResetAsync(PasswordResetMessage message, CancellationToken cancellationToken);
     Task SendEmailChangeAsync(EmailChangeMessage message, CancellationToken cancellationToken);
+    Task SendAccountLockedAsync(AccountLockedMessage message, CancellationToken cancellationToken);
 }
 
 public interface IMembershipSmsSender
@@ -256,7 +255,32 @@ public sealed record EmailConfirmationMessage(string UserId, string Email, strin
 public sealed record PasswordResetMessage(string UserId, string Email, string FirstName, string LastName, string Token);
 public sealed record EmailChangeMessage(string UserId, string NewEmail, string FirstName, string LastName, string Token);
 public sealed record PhoneChangeMessage(string UserId, string PhoneNumber, string FirstName, string LastName, string Token);
+public sealed record AccountLockedMessage(string UserId, string Email, string FirstName, string LastName, int LockoutMinutes);
 ```
+
+#### El aviso de bloqueo
+
+`SendAccountLockedAsync` se aparta de los demás en tres cosas, y conviene saber por qué.
+
+**No responde a una acción de su destinatario.** Le llega precisamente porque *otro* pudo haber
+estado intentando entrar en su cuenta. Es la única señal que tiene de ello: la respuesta del
+inicio de sesión **no distingue** «contraseña incorrecta» de «cuenta bloqueada», y no debe
+hacerlo, porque distinguirlo confirmaría a quien prueba correos cuáles tienen cuenta. El correo
+lleva esa información solo a quien controla el buzón.
+
+**No lleva testigo.** Con un enlace de reinicio dentro, bastaría con fallar la contraseña de
+alguien para que le llegara uno válido que no ha pedido.
+
+**Es el único puerto opcional.** En los endpoints de contraseña o correo el envío es el objeto
+de la petición, así que sin emisor no hay nada que hacer; aquí es un aviso añadido. Quien no
+registre ninguno sigue pudiendo autenticarse, y un fallo al enviarlo no altera la respuesta del
+inicio de sesión: un servidor de correo caído no puede dejar sin autenticar a nadie.
+
+Sale **una sola vez por bloqueo**, no en cada intento posterior: el bloqueo se comprueba antes
+que la contraseña, así que los intentos que llegan con la cuenta ya bloqueada no cuentan nada.
+
+La política —cuántos intentos y cuánto dura— la eliges tú en `IdentityOptions.Lockout`, igual
+que los roles. El paquete pone la mecánica, no los números.
 
 Redactar el mensaje aquí obligaría al paquete a elegir plantilla, formato e idioma, y a
 inventarse el patrón de ruta de la pantalla que recibe el testigo, que es de tu aplicación.
@@ -793,6 +817,8 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
+| 0.9.0   | Nuevo aviso por correo cuando una cuenta queda bloqueada por intentos fallidos: `SendAccountLockedAsync` en `IMembershipEmailSender`. La respuesta del inicio de sesión sigue sin distinguir «contraseña incorrecta» de «cuenta bloqueada» —distinguirlo confirmaría que ese correo tiene cuenta—, así que la información viaja solo al buzón, donde además es la primera señal de que alguien está probando contraseñas. El aviso **no lleva testigo**: con uno, fallar la contraseña de alguien bastaría para mandarle un enlace de reinicio que no ha pedido. Sale una sola vez por bloqueo, el emisor es opcional en este endpoint y un fallo al enviarlo no altera la respuesta. **Rompe** a quien implemente `IMembershipEmailSender` por su cuenta: la interfaz gana un método. |
+| 0.8.0   | `IAccessTokenClaimsProvider`: el consumidor puede añadir sus propias reclamaciones al token, que es lo que necesita un producto multiinquilino para llevar en la sesión de quién es. No puede sobrescribir `Name`, `Role` ni `Fullname`, porque eso sería una vía para concederse un rol. El emisor del token pasa de único a **con ámbito**, ya que esas aportaciones suelen salir de una consulta. Los tres avisos de correo ganan `ClientKey`, que el paquete rellena con la cabecera `clientId` para que quien los redacte sepa desde qué portal se pidieron. |
 | 0.7.0   | Las opciones dejan de llevar anotaciones de datos: `JwtOptions` pasa a ser una clase plana y la validación la hace `JwtOptionsValidator`, un `IValidateOptions<JwtOptions>` que sigue corriendo con `ValidateOnStart()`. Devuelve todos los fallos de una vez en lugar de cortar en el primero, y mide `SecurityKey` en bytes UTF-8 —que es lo que cuenta HMAC-SHA256— en lugar de caracteres. El arranque se comporta igual; cambia la superficie pública, porque las anotaciones eran parte de ella. |
 | 0.6.1   | Solo documentación: se explica cómo elegir el esquema de las tablas derivando el contexto (ver _Elegir el esquema_). El código no cambia. |
 | 0.6.0   | Renovación y cierre de sesión (`SessionEndpoints`), con rotación del testigo y detección de reutilización. `LoginUserResponse` pasa a devolver también `refreshToken`, lo que **rompe el contrato de la 0.5.0**. Nueva tabla `MembershipRefreshTokens` y nueva opción `RefreshTokenExpireInDays`. Cambiar la contraseña y desactivar una cuenta revocan las sesiones abiertas. `ApplicationUser` deja de ser `sealed` y el paquete admite el usuario y el contexto del consumidor con `AddMembershipServices<TUser, TContext>`: cada método público gana una forma genérica, y la de siempre se conserva. |

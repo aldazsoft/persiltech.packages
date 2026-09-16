@@ -21,7 +21,7 @@ Las dependencias externas no aparecen aqui: ya estan publicadas y no imponen ord
 | `Persiltech.Blazor.JSInterop` | 1.1.2 | - |
 | `Persiltech.Email` | 0.1.1 | - |
 | `Persiltech.Localizer` | 1.0.3 | - |
-| `Persiltech.Membership` | 0.8.0 | - |
+| `Persiltech.Membership` | 0.9.0 | - |
 | `Persiltech.UserServices.Abstractions` | 0.1.15 | - |
 | `Persiltech.Validation.Blazor` | 0.1.0 | - |
 
@@ -31,7 +31,7 @@ Las dependencias externas no aparecen aqui: ya estan publicadas y no imponen ord
 | --- | --- | --- |
 | `Persiltech.DomainValidation` | 2.0.3 | Persiltech.Localizer |
 | `Persiltech.Membership.Blazor` | 2.0.0 | Persiltech.Validation.Blazor |
-| `Persiltech.Membership.Email` | 0.2.0 | Persiltech.Email<br>Persiltech.Membership |
+| `Persiltech.Membership.Email` | 0.3.0 | Persiltech.Email<br>Persiltech.Membership |
 | `Persiltech.Membership.OAuth` | 0.3.0 | Persiltech.Membership |
 | `Persiltech.Results` | 1.0.2 | Persiltech.Localizer |
 | `Persiltech.UserServices` | 0.1.6 | Persiltech.UserServices.Abstractions |
