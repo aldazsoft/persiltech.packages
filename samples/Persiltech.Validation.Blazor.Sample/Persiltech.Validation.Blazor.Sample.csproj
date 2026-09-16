@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+    <PackageReference Include="MudBlazor" />
+  </ItemGroup>
+
+  <!-- El paquete que se verifica. MudBlazor lo pone el sample, no el paquete: el componente
+       trabaja contra el EditContext, así que sirve igual con las entradas nativas de Blazor.
+       Aquí se usa MudBlazor porque es lo que usan las aplicaciones de la casa y es donde hay
+       que ver que el error se pinta como si fuera suyo. -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/Persiltech.Validation.Blazor/Persiltech.Validation.Blazor.csproj" />
+  </ItemGroup>
+
+</Project>

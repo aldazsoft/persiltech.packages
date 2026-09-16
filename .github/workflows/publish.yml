@@ -4,7 +4,7 @@ name: Publish
 #
 #     git tag Persiltech.UserServices-v0.1.5 && git push origin Persiltech.UserServices-v0.1.5
 #
-# En el monorepo conviven diez paquetes con versiones independientes, asi que un 'v0.1.5'
+# En el monorepo conviven varios paquetes con versiones independientes, asi que un 'v0.1.5'
 # suelto seria ambiguo: la etiqueta tiene que decir cual se publica.
 #
 # La version publicada es la de <VersionPrefix> del .csproj, no la de la etiqueta: subela
@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # El nombre de la carpeta coincide con el <PackageId> en los diez proyectos, asi que
+      # El nombre de la carpeta coincide con el <PackageId> en todos los proyectos, asi que
       # la ruta del .csproj sale del identificador sin tabla de mapeo que mantener. El
       # patron acotado rechaza de paso cualquier intento de salirse de src/ con '..'.
       - name: Resolve package

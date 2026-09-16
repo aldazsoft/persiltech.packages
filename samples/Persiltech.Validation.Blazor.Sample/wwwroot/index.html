@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Persiltech.Validation.Blazor</title>
+    <base href="/" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
+</head>
+
+<body>
+    <!-- Las clases son de MudBlazor, que ya está cargado: así el sample no arrastra una hoja
+         de estilos propia solo para el cartel de carga y el de error. -->
+    <div id="app" class="d-flex align-center justify-center mud-height-full pa-8">
+        <span class="mud-typography mud-typography-body1">Cargando…</span>
+    </div>
+
+    <!-- 'hidden' lo mantiene oculto sin CSS propio: cuando hay un fallo, Blazor le escribe
+         un 'display:block' en línea, que gana por especificidad al estilo del agente. -->
+    <div id="blazor-error-ui" class="mud-theme-error pa-4" hidden>
+        Algo ha fallado. Recarga la página.
+        <a href="" class="reload mud-link mud-inherit-text">Recargar</a>
+    </div>
+
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

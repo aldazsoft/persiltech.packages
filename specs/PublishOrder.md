@@ -24,6 +24,7 @@ Las dependencias externas no aparecen aqui: ya estan publicadas y no imponen ord
 | `Persiltech.Membership` | 0.8.0 | - |
 | `Persiltech.Membership.Blazor` | 2.0.0 | - |
 | `Persiltech.UserServices.Abstractions` | 0.1.15 | - |
+| `Persiltech.Validation.Blazor` | 0.1.0 | - |
 
 ## Nivel 2 - dependen del nivel 1
 

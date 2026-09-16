@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!-- BL0006 avisa de que los tipos de RenderTree pueden cambiar entre versiones. Montar un
+         componente fuera del navegador exige derivar de Renderer, y su firma los nombra; es el
+         mismo motivo por el que bUnit lo silencia. Al vivir solo aquí, un cambio de esos tipos
+         se descubre al actualizar el SDK y no alcanza al paquete que se publica. -->
+    <NoWarn>$(NoWarn);BL0006</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Persiltech.Validation.Blazor\Persiltech.Validation.Blazor.csproj" />
+  </ItemGroup>
+</Project>

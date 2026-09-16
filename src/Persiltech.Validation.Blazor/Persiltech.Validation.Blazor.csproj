@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <PackageId>Persiltech.Validation.Blazor</PackageId>
+    <Title>Persiltech.Validation.Blazor</Title>
+    <Description>Lleva los errores de validacion que devuelve una API al campo que los provoco: los escribe en el EditContext de Blazor para que el componente de entrada los muestre como si fueran suyos.</Description>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <PackageTags>dotnet;csharp;blazor;webassembly;mudblazor;validation;editcontext;problemdetails</PackageTags>
+    <Authors>Edinson Aldaz</Authors>
+    <Company>Persiltech</Company>
+    <Product>Persiltech.Validation.Blazor</Product>
+    <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://aldazsoft.github.io/Validation.Blazor/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v0.1.0
+      - Primera versión: el componente ApiValidator lleva los errores de una API al campo que los provocó
+      - Resuelve rutas anidadas e índices —listas, arreglos y tipos con indexador propio— y empareja el camelCase del servidor con la propiedad
+      - Lo que no pertenece a ningún campo queda en Unmatched en lugar de perderse
+      - El mensaje se retira al editar el campo, al volver a enviar y al cambiar el formulario de modelo
+      - Sin dependencias de interfaz: trabaja contra el EditContext, así que sirve con MudBlazor y con las entradas nativas
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- <PackageLicenseFile>, <PackageReadmeFile> y <PackageIcon> exigen que el archivo viaje dentro del .nupkg. -->
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="../../assets/icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- Solo los componentes de Blazor. Nada de MudBlazor: el componente trabaja contra el
+       EditContext, así que sirve igual con las entradas nativas de Blazor, y atarlo a una
+       biblioteca de interfaz obligaría a arrastrarla a quien no la use.
+
+       Aquí NO se usa <FrameworkReference Include="Microsoft.AspNetCore.App" />, al contrario
+       que en el resto de librerías de la casa: una Razor Class Library que lo declare rompe a
+       las aplicaciones Blazor WebAssembly, que no referencian ese framework compartido. Es el
+       mismo criterio que Persiltech.Blazor.JSInterop y Persiltech.Membership.Blazor. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Persiltech.Validation.Blazor.Tests" />
+  </ItemGroup>
+
+</Project>

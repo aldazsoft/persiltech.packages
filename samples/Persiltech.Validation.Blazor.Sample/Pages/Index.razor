@@ -1,0 +1,111 @@
+@page "/"
+@inject FakeApi Api
+
+<MudPaper Class="pa-6" Elevation="3">
+    <MudText Typo="Typo.h5" Class="mb-1">Registro</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
+        Los errores que devuelve la API se pintan bajo el campo que los provocó, igual que los
+        de una anotación. No hay ningún cartel que maquetar.
+    </MudText>
+
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+        <MudText Typo="Typo.body2">Para provocar cada caso:</MudText>
+        <MudText Typo="Typo.body2">
+            · correo <strong>ocupado@example.com</strong> — un error que solo sabe el servidor
+        </MudText>
+        <MudText Typo="Typo.body2">
+            · contraseña corta — <strong>dos</strong> mensajes en el mismo campo
+        </MudText>
+        <MudText Typo="Typo.body2">
+            · ciudad <strong>Marte</strong> — una ruta anidada, <code>address.city</code>
+        </MudText>
+        <MudText Typo="Typo.body2">
+            · nombre <strong>error</strong> — un error sin campo, con la clave vacía
+        </MudText>
+    </MudAlert>
+
+    <EditForm Model="model" OnValidSubmit="SubmitAsync">
+        @* Las dos conviven: la de cliente resuelve lo que el navegador puede comprobar solo,
+           y esta trae lo que solo sabe el servidor. Las dos escriben en el mismo sitio. *@
+        <DataAnnotationsValidator />
+        <ApiValidator @ref="apiValidator" UnmatchedChanged="OnUnmatchedChanged" />
+
+        @if (unmatched.Count > 0)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">
+                @foreach (var message in unmatched)
+                {
+                    <MudText Typo="Typo.body2">@message</MudText>
+                }
+            </MudAlert>
+        }
+
+        <MudStack Spacing="3">
+            <MudTextField For="@(() => model.FirstName)"
+                          @bind-Value="model.FirstName"
+                          Label="Nombre"
+                          Variant="Variant.Outlined"
+                          Disabled="busy" />
+
+            <MudTextField For="@(() => model.Email)"
+                          @bind-Value="model.Email"
+                          Label="Correo"
+                          InputType="InputType.Email"
+                          Variant="Variant.Outlined"
+                          Disabled="busy" />
+
+            <MudTextField For="@(() => model.Password)"
+                          @bind-Value="model.Password"
+                          Label="Contraseña"
+                          InputType="InputType.Password"
+                          Variant="Variant.Outlined"
+                          Disabled="busy" />
+
+            <MudTextField For="@(() => model.Address.City)"
+                          @bind-Value="model.Address.City"
+                          Label="Ciudad"
+                          Variant="Variant.Outlined"
+                          Disabled="busy" />
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="busy">
+                @(busy ? "Enviando…" : "Registrarme")
+            </MudButton>
+
+            @if (accepted)
+            {
+                <MudAlert Severity="Severity.Success" Dense="true">
+                    La API aceptó el registro.
+                </MudAlert>
+            }
+        </MudStack>
+    </EditForm>
+</MudPaper>
+
+@code {
+    private readonly RegistrationModel model = new();
+
+    private ApiValidator apiValidator = null!;
+    private IReadOnlyList<string> unmatched = [];
+    private bool busy;
+    private bool accepted;
+
+    private void OnUnmatchedChanged(IReadOnlyList<string> messages) => unmatched = messages;
+
+    private async Task SubmitAsync()
+    {
+        busy = true;
+        accepted = false;
+
+        var errors = await Api.RegisterAsync(model);
+
+        busy = false;
+
+        // Una sola línea: lo que la API rechazó ya está en su campo.
+        apiValidator.Show(errors);
+
+        accepted = errors.Count == 0;
+    }
+}

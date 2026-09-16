@@ -1,0 +1,258 @@
+@page "/controles"
+@inject FakeApi Api
+
+<MudPaper Class="pa-6" Elevation="3">
+    <MudText Typo="Typo.h5" Class="mb-1">Solicitud</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
+        Un control de cada clase. En esta página <strong>no hay ninguna anotación de datos</strong>:
+        todas las comprobaciones se dejan en el servidor, así que enviar el formulario vacío
+        devuelve un mensaje para cada uno y se ve cómo lo pinta.
+    </MudText>
+
+    <EditForm EditContext="editContext" OnValidSubmit="SubmitAsync">
+        <ApiValidator @ref="apiValidator" UnmatchedChanged="OnUnmatchedChanged" />
+
+        @if (unmatched.Count > 0)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">
+                @foreach (var message in unmatched)
+                {
+                    <MudText Typo="Typo.body2">@message</MudText>
+                }
+            </MudAlert>
+        }
+
+        @* Los campos no llevan 'Disabled' mientras la llamada está en vuelo, solo los botones.
+           Deshabilitar de golpe el autocompletado y el selector de fecha a mitad del envío
+           deja a MudBlazor sin repintar la respuesta: el botón se queda en «Enviando…» para
+           siempre. Con el botón basta para impedir el doble envío. *@
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField For="@(() => model.Comments)"
+                              @bind-Value="model.Comments"
+                              Label="Qué necesitas"
+                              Lines="4"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudSelect For="@(() => model.Country)"
+                           @bind-Value="model.Country"
+                           Label="País"
+                           Variant="Variant.Outlined">
+                    @foreach (var country in Catalogs.Countries)
+                    {
+                        <MudSelectItem Value="@country" />
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudAutocomplete For="@(() => model.Sector)"
+                                 @bind-Value="model.Sector"
+                                 Label="Sector"
+                                 SearchFunc="SearchSectorAsync"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="true"
+                                 Variant="Variant.Outlined" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudNumericField For="@(() => model.Employees)"
+                                 @bind-Value="model.Employees"
+                                 Label="Cuántas personas sois"
+                                 Variant="Variant.Outlined" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudDatePicker For="@(() => model.StartDate)"
+                               @bind-Date="model.StartDate"
+                               Label="Fecha de arranque"
+                               Variant="Variant.Outlined" />
+            </MudItem>
+
+            @* MudSelect ata su 'For' al valor único, no a la lista de seleccionados, así que
+               aquí no hay parámetro al que pasarlo. El mensaje sí está en el EditContext —la
+               clave 'interests' resuelve a la propiedad—, y ValidationMessage, que es de
+               Blazor, lo lee de ahí. Es la salida para cualquier control que no exponga 'For'. *@
+            <MudItem xs="12">
+                <MudSelect T="string"
+                           MultiSelection="true"
+                           SelectedValues="model.Interests"
+                           SelectedValuesChanged="OnInterestsChanged"
+                           Label="Qué te interesa"
+                           Variant="Variant.Outlined">
+                    @foreach (var interest in Catalogs.Interests)
+                    {
+                        <MudSelectItem Value="@interest" />
+                    }
+                </MudSelect>
+
+                <MudText Typo="Typo.caption" Color="Color.Error">
+                    <ValidationMessage For="@(() => model.Interests)" />
+                </MudText>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Plan</MudText>
+
+                <MudRadioGroup For="@(() => model.Plan)"
+                               @bind-Value="model.Plan">
+                    @foreach (var plan in Catalogs.Plans)
+                    {
+                        <MudRadio Value="@plan" Color="Color.Primary" Dense="true">@plan</MudRadio>
+                    }
+                </MudRadioGroup>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudCheckBox For="@(() => model.AcceptsTerms)"
+                             @bind-Value="model.AcceptsTerms"
+                             Label="Acepto las condiciones"
+                             Color="Color.Primary" />
+
+                <MudSwitch For="@(() => model.Newsletter)"
+                           @bind-Value="model.Newsletter"
+                           Label="Quiero el boletín"
+                           Color="Color.Primary" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" AlignItems="AlignItems.Center">
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="busy">
+                        @(busy ? "Enviando…" : "Enviar")
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               OnClick="Fill"
+                               Disabled="busy">
+                        Rellenar con algo válido
+                    </MudButton>
+
+                    @if (accepted)
+                    {
+                        <MudAlert Severity="Severity.Success" Dense="true" Class="flex-grow-1">
+                            La API aceptó la solicitud.
+                        </MudAlert>
+                    }
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+</MudPaper>
+
+<MudExpansionPanels Class="mt-4" Elevation="1">
+    <MudExpansionPanel Text="Qué rechaza la API cuando ya está relleno">
+        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+            <thead>
+                <tr>
+                    <th>Control</th>
+                    <th>Para provocarlo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Multilínea</td>
+                    <td>menos de 20 caracteres</td>
+                </tr>
+                <tr>
+                    <td>Desplegable</td>
+                    <td>país <strong>Marte</strong></td>
+                </tr>
+                <tr>
+                    <td>Selección múltiple</td>
+                    <td>más de tres intereses</td>
+                </tr>
+                <tr>
+                    <td>Interruptor</td>
+                    <td>pedir el boletín sin sector</td>
+                </tr>
+                <tr>
+                    <td>Numérico</td>
+                    <td>cero o menos</td>
+                </tr>
+                <tr>
+                    <td>Fecha</td>
+                    <td>un día anterior a hoy</td>
+                </tr>
+                <tr>
+                    <td>Autocompletado</td>
+                    <td>sector <strong>Minería espacial</strong></td>
+                </tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    private readonly RequestModel model = new();
+
+    // El contexto se crea aquí en vez de dejar que EditForm lo monte: la página necesita
+    // avisarle del cambio del desplegable múltiple, y el que crea EditForm no sale de él.
+    private EditContext editContext = null!;
+
+    private ApiValidator apiValidator = null!;
+    private IReadOnlyList<string> unmatched = [];
+    private bool busy;
+    private bool accepted;
+
+    protected override void OnInitialized() => editContext = new EditContext(model);
+
+    private void OnUnmatchedChanged(IReadOnlyList<string> messages) => unmatched = messages;
+
+    private Task<IEnumerable<string?>> SearchSectorAsync(string value, CancellationToken token) =>
+        Task.FromResult(string.IsNullOrWhiteSpace(value)
+            ? Catalogs.Sectors.Cast<string?>()
+            : Catalogs.Sectors
+                .Where(s => s.Contains(value, StringComparison.OrdinalIgnoreCase))
+                .Cast<string?>());
+
+    /// <summary>
+    /// Traslada la selección del desplegable múltiple a la lista del modelo.
+    /// </summary>
+    /// <remarks>
+    /// Y avisa del cambio de campo a mano: MudSelect no lo hace por la lista, así que sin esto
+    /// el mensaje seguiría puesto después de corregir la selección.
+    /// </remarks>
+    private void OnInterestsChanged(IReadOnlyCollection<string> values)
+    {
+        model.Interests = [.. values];
+
+        editContext.NotifyFieldChanged(new FieldIdentifier(model, nameof(RequestModel.Interests)));
+    }
+
+    private void Fill()
+    {
+        model.Comments = "Queremos ordenar las declaraciones de aduana y ver el estado de cada envío.";
+        model.Country = "Perú";
+        model.Sector = "Comercio exterior";
+        model.Employees = 12;
+        model.StartDate = DateTime.Today.AddDays(7);
+        model.Interests = ["Aduanas", "Transporte"];
+        model.Plan = "Profesional";
+        model.AcceptsTerms = true;
+        model.Newsletter = true;
+
+        apiValidator.Clear();
+
+        accepted = false;
+    }
+
+    private async Task SubmitAsync()
+    {
+        busy = true;
+        accepted = false;
+
+        var errors = await Api.SubmitRequestAsync(model);
+
+        busy = false;
+
+        apiValidator.Show(errors);
+
+        accepted = errors.Count == 0;
+    }
+}
