@@ -61,6 +61,12 @@ public static class DependencyInjection
 
         services.Configure(configureOptions);
 
+        // Los rótulos por defecto, para que los formularios funcionen sin configurar nada.
+        // TryAddSingleton y no Configure: así una llamada previa a AddMembershipFormTexts gana,
+        // y quien no llame a ninguna se queda con los de la casa.
+        services.TryAddSingleton<IOptions<MembershipFormTexts>>(
+            Options.Create(new MembershipFormTexts()));
+
         services.TryAddScoped<IMembershipTokenStore, LocalStorageTokenStore>();
         services.AddScoped<MembershipBearerTokenHandler>();
 
@@ -79,6 +85,46 @@ public static class DependencyInjection
         services.AddScoped<MembershipAuthenticationStateProvider>();
         services.AddScoped<AuthenticationStateProvider>(
             provider => provider.GetRequiredService<MembershipAuthenticationStateProvider>());
+
+        return services;
+    }
+
+    /// <summary>
+    /// Sustituye los rótulos de los formularios.
+    /// </summary>
+    /// <remarks>
+    /// Se llama <b>antes</b> que <see cref="AddMembershipBlazor"/>, o da igual el orden si se
+    /// llama a esta: el registro del paquete usa <c>TryAdd</c> y no pisa lo que ya haya.
+    /// <para>
+    /// El delegado recibe los valores por defecto ya puestos, así que basta con tocar los que
+    /// cambien:
+    /// <code>
+    /// services.AddMembershipFormTexts(texts =>
+    /// {
+    ///     texts.Email = "Usuario";
+    ///     texts.Password = "Clave";
+    /// });
+    /// </code>
+    /// </para>
+    /// </remarks>
+    /// <param name="services">Colección de servicios.</param>
+    /// <param name="configureTexts">Ajustes sobre los rótulos por defecto.</param>
+    /// <returns>La misma colección, para poder encadenar.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="services"/> o <paramref name="configureTexts"/> es
+    /// <see langword="null"/>.
+    /// </exception>
+    public static IServiceCollection AddMembershipFormTexts(
+        this IServiceCollection services,
+        Action<MembershipFormTexts> configureTexts)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configureTexts);
+
+        var texts = new MembershipFormTexts();
+        configureTexts(texts);
+
+        services.AddSingleton<IOptions<MembershipFormTexts>>(Options.Create(texts));
 
         return services;
     }

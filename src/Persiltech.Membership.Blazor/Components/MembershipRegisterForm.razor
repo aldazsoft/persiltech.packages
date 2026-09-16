@@ -6,7 +6,8 @@
 
     @if (Unmatched.Count > 0)
     {
-        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true"
+                  UserAttributes="@MembershipFormAttributes.Alert">
             @foreach (var message in Unmatched)
             {
                 <MudText Typo="Typo.body2">@message</MudText>
@@ -14,46 +15,67 @@
         </MudAlert>
     }
 
-    <MudTextField For="@(() => Model.Email)"
-                  @bind-Value="Model.Email"
-                  Label="Correo"
-                  InputType="InputType.Email"
-                  Margin="@FieldMargin"
-                  Disabled="Busy" />
-
-    @* La fortaleza de la contraseña la fija la política de Identity del consumidor, que este
-       paquete no conoce, así que no se comprueba aquí: la hace cumplir el servidor y su
-       mensaje llega a este mismo campo. *@
-    <MudTextField For="@(() => Model.Password)"
-                  @bind-Value="Model.Password"
-                  Label="Contraseña"
-                  InputType="InputType.Password"
-                  Margin="@FieldMargin"
-                  Disabled="Busy" />
-
     <MudTextField For="@(() => Model.FirstName)"
                   @bind-Value="Model.FirstName"
-                  Label="Nombre"
+                  Label="@Texts.Value.FirstName"
                   Margin="@FieldMargin"
-                  Disabled="Busy" />
+                  Disabled="Busy"
+                  AutoFocus="true"
+                  UserAttributes="@MembershipFormAttributes.AutoComplete("given-name")" />
 
     <MudTextField For="@(() => Model.LastName)"
                   @bind-Value="Model.LastName"
-                  Label="Apellidos"
+                  Label="@Texts.Value.LastName"
                   Margin="@FieldMargin"
-                  Disabled="Busy" />
+                  Disabled="Busy"
+                  UserAttributes="@MembershipFormAttributes.AutoComplete("family-name")" />
+
+    <MudTextField For="@(() => Model.Email)"
+                  @bind-Value="Model.Email"
+                  Label="@Texts.Value.Email"
+                  InputType="InputType.Email"
+                  InputMode="InputMode.email"
+                  Margin="@FieldMargin"
+                  Disabled="Busy"
+                  UserAttributes="@MembershipFormAttributes.AutoComplete("username")" />
+
+    @* new-password, no current-password: es lo que hace que el gestor de contraseñas ofrezca
+       generar una en lugar de rellenar la que ya tuviera guardada para este sitio. *@
+    <MudTextField For="@(() => Model.Password)"
+                  @bind-Value="Model.Password"
+                  Label="@Texts.Value.Password"
+                  InputType="@PasswordInputType"
+                  Margin="@FieldMargin"
+                  HelperText="@PasswordHelperText"
+                  Disabled="Busy"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@PasswordAdornmentIcon"
+                  AdornmentAriaLabel="@PasswordAdornmentLabel"
+                  OnAdornmentClick="TogglePasswordVisibility"
+                  UserAttributes="@MembershipFormAttributes.AutoComplete("new-password")" />
 
     <MudButton ButtonType="ButtonType.Submit"
                Variant="Variant.Filled"
                Color="Color.Primary"
+               FullWidth="true"
+               Size="Size.Large"
                Disabled="Busy"
                Class="mt-4">
-        @SubmitLabel
+        @if (Busy)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            @Texts.Value.Working
+        }
+        else
+        {
+            @SubmitLabel
+        }
     </MudButton>
 </EditForm>
 
 @code {
     [Inject] private IMembershipApiClient Api { get; set; } = default!;
+    [Inject] private IOptions<MembershipFormTexts> Texts { get; set; } = default!;
 
     /// <summary>
     /// Se invoca cuando la cuenta ya está creada, con el correo con el que se registró.
@@ -72,6 +94,16 @@
     public string SubmitLabel { get; set; } = "Crear cuenta";
 
     /// <summary>
+    /// Reglas de la contraseña, para decirlas antes de que falle el intento.
+    /// </summary>
+    /// <remarks>
+    /// Las fija la política de Identity del consumidor, que el paquete no conoce. Sin esto,
+    /// la primera noticia de que la contraseña no vale llega después de enviarla.
+    /// </remarks>
+    [Parameter]
+    public string? PasswordHelperText { get; set; }
+
+    /// <summary>
     /// Campos compactos, para encajar en un diálogo.
     /// </summary>
     [Parameter]
@@ -82,10 +114,23 @@
     private ApiValidator Validator = default!;
     private IReadOnlyList<string> Unmatched = [];
     private bool Busy;
+    private bool PasswordIsVisible;
 
     private Margin FieldMargin => Dense ? Margin.Dense : Margin.Normal;
 
+    private InputType PasswordInputType => PasswordIsVisible ? InputType.Text : InputType.Password;
+
+    private string PasswordAdornmentIcon => PasswordIsVisible
+        ? Icons.Material.Filled.VisibilityOff
+        : Icons.Material.Filled.Visibility;
+
+    private string PasswordAdornmentLabel => PasswordIsVisible
+        ? Texts.Value.HidePassword
+        : Texts.Value.ShowPassword;
+
     private void OnUnmatchedChanged(IReadOnlyList<string> messages) => Unmatched = messages;
+
+    private void TogglePasswordVisibility() => PasswordIsVisible = !PasswordIsVisible;
 
     private async Task SubmitAsync()
     {

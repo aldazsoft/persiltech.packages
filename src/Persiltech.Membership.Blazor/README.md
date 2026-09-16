@@ -166,6 +166,40 @@ confirmar el correo antes de poder entrar.
 
 Los cuatro aceptan `SubmitLabel` para el texto del botón y `Dense` para encajar en un diálogo.
 
+### Los rótulos son tuyos
+
+Los textos que se leen dentro de los formularios —los rótulos de los campos, la ayuda, lo que
+anuncia el botón mientras envía— salen de `MembershipFormTexts`. El paquete trae unos por
+defecto en español que sirven tal cual; para cambiar alguno no hace falta bifurcar nada:
+
+```csharp
+builder.Services.AddMembershipFormTexts(texts =>
+{
+    texts.Email = "Usuario";
+    texts.Password = "Clave";
+});
+```
+
+El delegado recibe los valores por defecto **ya puestos**, así que tocas los que cambien y el
+resto se queda como está. El orden respecto a `AddMembershipBlazor` da igual.
+
+### Lo que hace el navegador por ti
+
+Cada campo declara su `autocomplete` (`username`, `current-password`, `new-password`,
+`one-time-code`, `given-name`, `family-name`). Sin eso ningún gestor de contraseñas ofrece
+rellenar ni guardar, que en un móvil es la diferencia entre entrar de un toque y teclear una
+contraseña larga. En el registro y en el cambio va `new-password`, que es justo lo que hace que
+el gestor **proponga generar una** en lugar de repetir la que ya tuviera.
+
+Los campos de contraseña llevan un botón para enseñarla, con su descripción para los lectores
+de pantalla (`ShowPassword` / `HidePassword`). El foco arranca en el primer campo que toca
+escribir: en el inicio de sesión, la contraseña si le pasaste `InitialEmail`, y el correo si no.
+Y mientras la petición está en vuelo, el botón lo dice y queda deshabilitado, para que un doble
+envío no llegue a salir.
+
+El aviso de error se anuncia al aparecer (`role="alert"`): quien no ve la pantalla no tiene
+otra forma de enterarse de que el intento falló.
+
 ### Dónde salen los errores
 
 Cada mensaje que devuelve la API se pinta **bajo el campo que lo provocó**, con el mismo aspecto
@@ -241,6 +275,7 @@ tabla resume qué cambió en cada versión publicada.
 
 | Versión           | Cambios                                                                                     |
 | ----------------- | ------------------------------------------------------------------------------------------- |
+| 2.0.0-preview.5   | Los rótulos salen de `MembershipFormTexts` y se sustituyen con `AddMembershipFormTexts`: el paquete deja de imponer el español, que era lo que obligaba a bifurcarlo para cambiar una palabra. Cada campo declara su `autocomplete`, así que los gestores de contraseñas rellenan, ofrecen guardar y proponen generar una nueva donde toca. Las contraseñas traen un botón para enseñarlas, con su descripción para los lectores de pantalla. El aviso de error se anuncia al aparecer (`role="alert"`), el foco arranca en el primer campo que toca escribir, y mientras la petición está en vuelo el botón lo dice y queda deshabilitado. |
 | 2.0.0-preview.4   | Los cuatro formularios pasan a `EditForm` y cada error de la API se pinta **bajo el campo que lo provocó**, con `Persiltech.Validation.Blazor` —la única dependencia nueva—. Desaparece `MembershipValidationErrors`, el cartel que reunía los errores de todos los campos: lo que no es de ningún campo sigue saliendo arriba, y el resto va a su sitio. El aviso de que las dos contraseñas no coinciden deja de ser un cartel aparte y sale bajo su campo. Los campos obligatorios y el formato del correo se comprueban ya en el navegador. Y los botones envían el formulario, así que la tecla Intro funciona. |
 | 2.0.0-preview.3   | `MembershipResetPasswordForm` deja de mostrar el testigo: es una credencial —quien lo tenga puede cambiar esa contraseña— y en un campo acababa copiado en un chat o en una captura. Se lee del enlace y se guarda en memoria. El correo queda de solo lectura **si vino en el enlace**; sin él sigue siendo editable, o la pantalla no serviría. Se añade la confirmación de contraseña, que el servidor no puede validar porque solo recibe una. Y la cadena de consulta se limpia de la barra de direcciones al leerla, con `ClearQueryString` para desactivarlo. Nuevo `PasswordHelperText` para decir las reglas antes de que el intento falle. |
 | 2.0.0-preview.2   | `MembershipApiOptions` pasa a ser una clase plana, sin anotaciones de datos. La comprobación la hace `MembershipApiOptionsValidator`, que `AddMembershipBlazor` invoca al registrar —en WebAssembly no hay host que arranque servicios, así que `ValidateOnStart` no correría nunca— y que ahora revisa también que `BaseAddress` sea una URL http o https —en Unix una ruta como `/api` parsea como URI absoluta y se colaba— y que las rutas sean relativas a ella. |

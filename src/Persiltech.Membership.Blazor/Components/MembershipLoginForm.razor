@@ -7,9 +7,12 @@
     <DataAnnotationsValidator />
     <ApiValidator @ref="Validator" UnmatchedChanged="OnUnmatchedChanged" />
 
+    @* role="alert" para que un lector de pantalla lo lea al aparecer: quien no ve la pantalla
+       no tiene forma de enterarse de que el intento falló. *@
     @if (Unmatched.Count > 0)
     {
-        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true"
+                  UserAttributes="@MembershipFormAttributes.Alert">
             @foreach (var message in Unmatched)
             {
                 <MudText Typo="Typo.body2">@message</MudText>
@@ -17,41 +20,71 @@
         </MudAlert>
     }
 
+    @* autocomplete: sin él, ningún gestor de contraseñas ofrece rellenar ni guardar. Es la
+       diferencia entre entrar de un toque y teclear una contraseña larga en un móvil.
+
+       AutoFocus es el parámetro de MudBlazor, que enfoca por JS, y no el atributo autofocus de
+       HTML: el navegador solo honra el atributo al analizar el documento, así que en una SPA no
+       haría nada al llegar a esta pantalla navegando desde otra. *@
     <MudTextField For="@(() => Model.Email)"
                   @bind-Value="Model.Email"
-                  Label="Correo"
+                  Label="@Texts.Value.Email"
                   InputType="InputType.Email"
+                  InputMode="InputMode.email"
                   Margin="@FieldMargin"
-                  Disabled="Busy" />
+                  Disabled="Busy"
+                  AutoFocus="@(string.IsNullOrEmpty(InitialEmail))"
+                  UserAttributes="@MembershipFormAttributes.AutoComplete("username")" />
 
     <MudTextField For="@(() => Model.Password)"
                   @bind-Value="Model.Password"
-                  Label="Contraseña"
-                  InputType="InputType.Password"
+                  Label="@Texts.Value.Password"
+                  InputType="@PasswordInputType"
                   Margin="@FieldMargin"
-                  Disabled="Busy" />
+                  Disabled="Busy"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@PasswordAdornmentIcon"
+                  AdornmentAriaLabel="@PasswordAdornmentLabel"
+                  OnAdornmentClick="TogglePasswordVisibility"
+                  AutoFocus="@(!string.IsNullOrEmpty(InitialEmail))"
+                  UserAttributes="@MembershipFormAttributes.AutoComplete("current-password")" />
 
+    @* Solo aparece cuando la API lo pide. Mostrarlo siempre invitaría a rellenarlo a quien no
+       tiene el doble factor activado. *@
     @if (TwoFactorRequired)
     {
         <MudTextField For="@(() => Model.TwoFactorCode)"
                       @bind-Value="Model.TwoFactorCode"
-                      Label="Código del doble factor"
+                      Label="@Texts.Value.TwoFactorCode"
+                      InputMode="InputMode.numeric"
                       Margin="@FieldMargin"
-                      Disabled="Busy" />
+                      Disabled="Busy"
+                      UserAttributes="@MembershipFormAttributes.AutoComplete("one-time-code")" />
     }
 
     <MudButton ButtonType="ButtonType.Submit"
                Variant="Variant.Filled"
                Color="Color.Primary"
+               FullWidth="true"
+               Size="Size.Large"
                Disabled="Busy"
                Class="mt-4">
-        @SubmitLabel
+        @if (Busy)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            @Texts.Value.Working
+        }
+        else
+        {
+            @SubmitLabel
+        }
     </MudButton>
 </EditForm>
 
 @code {
     [Inject] private IMembershipApiClient Api { get; set; } = default!;
     [Inject] private MembershipAuthenticationStateProvider Auth { get; set; } = default!;
+    [Inject] private IOptions<MembershipFormTexts> Texts { get; set; } = default!;
 
     /// <summary>
     /// Se invoca cuando la sesión ya está abierta, con los testigos recién emitidos.
@@ -66,6 +99,10 @@
     /// <summary>
     /// Correo con el que se rellena el campo al aparecer.
     /// </summary>
+    /// <remarks>
+    /// Cuando llega con valor, el foco arranca en la contraseña: reescribir un correo que ya
+    /// está puesto no es lo que nadie viene a hacer.
+    /// </remarks>
     [Parameter]
     public string? InitialEmail { get; set; }
 
@@ -87,12 +124,25 @@
     private IReadOnlyList<string> Unmatched = [];
     private bool Busy;
     private bool TwoFactorRequired;
+    private bool PasswordIsVisible;
 
     private Margin FieldMargin => Dense ? Margin.Dense : Margin.Normal;
+
+    private InputType PasswordInputType => PasswordIsVisible ? InputType.Text : InputType.Password;
+
+    private string PasswordAdornmentIcon => PasswordIsVisible
+        ? Icons.Material.Filled.VisibilityOff
+        : Icons.Material.Filled.Visibility;
+
+    private string PasswordAdornmentLabel => PasswordIsVisible
+        ? Texts.Value.HidePassword
+        : Texts.Value.ShowPassword;
 
     protected override void OnInitialized() => Model.Email = InitialEmail;
 
     private void OnUnmatchedChanged(IReadOnlyList<string> messages) => Unmatched = messages;
+
+    private void TogglePasswordVisibility() => PasswordIsVisible = !PasswordIsVisible;
 
     private async Task SubmitAsync()
     {
@@ -109,8 +159,6 @@
         {
             Validator.Show(result.Errors);
 
-            // El campo del segundo factor solo aparece cuando la API lo pide. Mostrarlo
-            // siempre invitaría a rellenarlo a quien no lo tiene activado.
             TwoFactorRequired |= result.Errors.ContainsKey("twoFactorCode");
 
             return;

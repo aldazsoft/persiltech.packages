@@ -8,7 +8,7 @@
     <!-- Preliberacion: el identificador ya lo ocupaba el paquete del monorepo viejo, que
          llego a 1.0.1. Este es su sucesor y sustituye la API entera, de ahi el mayor; el
          sufijo dice que la superficie todavia se mueve. -->
-    <VersionSuffix>preview.4</VersionSuffix>
+    <VersionSuffix>preview.5</VersionSuffix>
     <PackageTags>dotnet;csharp;blazor;webassembly;mudblazor;membership;identity;jwt;authentication</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
@@ -18,6 +18,13 @@
 
   <PropertyGroup>
     <PackageReleaseNotes>
+      v2.0.0-preview.5
+      - Los rótulos de los formularios salen de MembershipFormTexts, que se sustituye con AddMembershipFormTexts: el paquete deja de imponer el español
+      - Cada campo declara su autocomplete, así que los gestores de contraseñas rellenan y ofrecen guardar
+      - La contraseña trae un botón para enseñarla, con su descripción para los lectores de pantalla
+      - El aviso de error se anuncia al aparecer (role="alert"), y el foco arranca en el primer campo que toca escribir
+      - Mientras la petición está en vuelo, el botón lo dice y queda deshabilitado
+
       v2.0.0-preview.4
       - Los cuatro formularios pasan a EditForm y muestran cada error de la API bajo el campo que lo provocó, con Persiltech.Validation.Blazor
       - Desaparece MembershipValidationErrors: ya no hay un cartel que reúna los errores de todos los campos

@@ -1,3 +1,5 @@
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Options;
 global using Microsoft.JSInterop;
 global using NSubstitute;
 global using Persiltech.Membership.Blazor;

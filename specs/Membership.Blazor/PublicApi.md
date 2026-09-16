@@ -135,6 +135,58 @@ Parámetros comunes a los cuatro formularios:
 | `string SubmitLabel { get; set; }` | Texto del botón. Cada uno trae el suyo por defecto.          |
 | `bool Dense { get; set; }`         | Campos compactos, para encajar en un diálogo.                |
 
+## Los rótulos: MembershipFormTexts
+
+Todo lo que se lee dentro de los formularios vive en una clase plana con valores por defecto en
+español. Es lo que los hace reutilizables fuera del español: los rótulos estaban escritos dentro
+de cada componente, así que cambiar una palabra obligaba a bifurcar el paquete.
+
+```csharp
+public sealed class MembershipFormTexts
+{
+    public string Email { get; set; }            // "Correo"
+    public string Password { get; set; }         // "Contraseña"
+    public string TwoFactorCode { get; set; }    // "Código del doble factor"
+    public string FirstName { get; set; }        // "Nombre"
+    public string LastName { get; set; }         // "Apellidos"
+    public string NewPassword { get; set; }      // "Contraseña nueva"
+    public string ConfirmPassword { get; set; }  // "Repite la contraseña"
+    public string LockedEmailHelp { get; set; }  // "La cuenta para la que se pidió el cambio."
+    public string ShowPassword { get; set; }     // "Mostrar la contraseña"
+    public string HidePassword { get; set; }     // "Ocultar la contraseña"
+    public string Working { get; set; }          // "Enviando…"
+}
+```
+
+No se valida nada: un rótulo vacío sale vacío y se ve en la primera pantalla. Exigirlos todos
+obligaría a repetir los once en cada aplicación, que es lo contrario de lo que busca la clase.
+
+Se resuelve por `IOptions<MembershipFormTexts>`. `AddMembershipBlazor` registra los valores por
+defecto con `TryAddSingleton` y `AddMembershipFormTexts` los suyos con `AddSingleton`, de modo
+que **el consumidor gana en cualquier orden**: por delante porque el `TryAdd` cede, por detrás
+porque la última inscripción es la que resuelve. Homogeneizar las dos a la misma llamada rompe
+una de las dos mitades sin que nada falle al compilar; de ahí que ambas tengan prueba.
+
+## Accesibilidad y autocompletado
+
+No son un añadido de las pantallas del consumidor: viajan dentro de los componentes, porque son
+justo lo que se olvida al escribir un formulario y su ausencia no rompe nada visible.
+
+| Qué                            | Dónde                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------ |
+| `autocomplete`                 | `username`, `current-password`, `new-password`, `one-time-code`, `given-name`, `family-name` |
+| `inputmode`                    | `email` en los correos, `numeric` en el código del segundo factor                            |
+| `role="alert"`                 | El aviso de lo que no es de ningún campo, para que se anuncie al aparecer                    |
+| Botón de ver la contraseña     | `AdornmentAriaLabel`, que alterna entre `ShowPassword` y `HidePassword`                      |
+| Foco inicial                   | El primer campo que toca escribir, con el parámetro `AutoFocus` de MudBlazor                 |
+| Estado de envío                | El botón pasa a `Working` y queda deshabilitado mientras la petición está en vuelo           |
+
+El foco usa `AutoFocus` —el parámetro de MudBlazor, que enfoca por JS— y **no** el atributo
+`autofocus` de HTML: el navegador solo lo honra al analizar el documento, así que en una SPA no
+haría nada al llegar a la pantalla navegando desde otra.
+
+Los atributos sueltos los centraliza `MembershipFormAttributes`, que es `internal`.
+
 **`MembershipLoginForm` abre la sesión por su cuenta**: llama a
 `MembershipAuthenticationStateProvider.SignInAsync` antes de invocar `OnLoggedIn`. Es lo único
 que no puede quedar en manos del consumidor sin que el formulario deje de servir para nada —
@@ -199,11 +251,16 @@ public static class DependencyInjection
     public static IServiceCollection AddMembershipBlazor(
         this IServiceCollection services,
         Action<MembershipApiOptions> configureOptions);
+
+    public static IServiceCollection AddMembershipFormTexts(
+        this IServiceCollection services,
+        Action<MembershipFormTexts> configureTexts);
 }
 ```
 
 Registra las opciones, el `HttpClient` con nombre y su manejador, el cliente de la API, el
-almacén de testigos por defecto y el proveedor de estado de autenticación.
+almacén de testigos por defecto, el proveedor de estado de autenticación y los rótulos por
+defecto de los formularios.
 
 No llama a `AddMudServices`: MudBlazor es del consumidor, que ya lo registra para su propia
 interfaz, y hacerlo dos veces duplicaría sus proveedores.
