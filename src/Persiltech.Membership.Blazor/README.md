@@ -165,8 +165,25 @@ invitaría a rellenarlo a quien no lo tiene activado.
 confirmar el correo antes de poder entrar.
 
 Los cuatro aceptan `SubmitLabel` para el texto del botón y `Dense` para encajar en un diálogo.
-Para pintar los errores de una llamada tuya, `MembershipValidationErrors` toma el
-`ApiResult<T>.Errors` directamente.
+
+### Dónde salen los errores
+
+Cada mensaje que devuelve la API se pinta **bajo el campo que lo provocó**, con el mismo aspecto
+que tendría el de una anotación, en lugar de amontonarse en un cartel encima del formulario. De
+eso se encarga [`Persiltech.Validation.Blazor`](https://www.nuget.org/packages/Persiltech.Validation.Blazor/),
+que es la única dependencia nueva de esta versión y viaja contigo al restaurar el paquete.
+
+Lo que **no** pertenece a ningún campo sí sale arriba, en un aviso: los errores generales, y en
+la pantalla de cambio de contraseña el más importante de todos —que el testigo no vale o ya
+caducó—, porque el testigo no se muestra y no hay campo donde ponerlo.
+
+Los formularios comprueban además en el navegador lo que no hace falta preguntar: que los
+campos obligatorios estén, y que el correo tenga forma de correo. La fortaleza de la contraseña
+no, porque la fija tu política de Identity y este paquete no la conoce: dila con
+`PasswordHelperText` y deja que el servidor la haga cumplir.
+
+Para pintar los errores de una llamada tuya, usa el mismo componente: `<ApiValidator />` dentro
+de tu `EditForm` y `Show(result.Errors)` con el `ApiResult<T>.Errors` cuando la llamada vuelva.
 
 ## La sesión
 
@@ -224,6 +241,7 @@ tabla resume qué cambió en cada versión publicada.
 
 | Versión           | Cambios                                                                                     |
 | ----------------- | ------------------------------------------------------------------------------------------- |
+| 2.0.0-preview.4   | Los cuatro formularios pasan a `EditForm` y cada error de la API se pinta **bajo el campo que lo provocó**, con `Persiltech.Validation.Blazor` —la única dependencia nueva—. Desaparece `MembershipValidationErrors`, el cartel que reunía los errores de todos los campos: lo que no es de ningún campo sigue saliendo arriba, y el resto va a su sitio. El aviso de que las dos contraseñas no coinciden deja de ser un cartel aparte y sale bajo su campo. Los campos obligatorios y el formato del correo se comprueban ya en el navegador. Y los botones envían el formulario, así que la tecla Intro funciona. |
 | 2.0.0-preview.3   | `MembershipResetPasswordForm` deja de mostrar el testigo: es una credencial —quien lo tenga puede cambiar esa contraseña— y en un campo acababa copiado en un chat o en una captura. Se lee del enlace y se guarda en memoria. El correo queda de solo lectura **si vino en el enlace**; sin él sigue siendo editable, o la pantalla no serviría. Se añade la confirmación de contraseña, que el servidor no puede validar porque solo recibe una. Y la cadena de consulta se limpia de la barra de direcciones al leerla, con `ClearQueryString` para desactivarlo. Nuevo `PasswordHelperText` para decir las reglas antes de que el intento falle. |
 | 2.0.0-preview.2   | `MembershipApiOptions` pasa a ser una clase plana, sin anotaciones de datos. La comprobación la hace `MembershipApiOptionsValidator`, que `AddMembershipBlazor` invoca al registrar —en WebAssembly no hay host que arranque servicios, así que `ValidateOnStart` no correría nunca— y que ahora revisa también que `BaseAddress` sea una URL http o https —en Unix una ruta como `/api` parsea como URI absoluta y se colaba— y que las rutas sean relativas a ella. |
 | 2.0.0-preview.1   | **Reescritura completa.** Cliente de `Persiltech.Membership` 0.6.0: estado de autenticación con renovación, almacén de testigos sustituible, manejador que firma, y los formularios de sesión, registro y contraseña. |

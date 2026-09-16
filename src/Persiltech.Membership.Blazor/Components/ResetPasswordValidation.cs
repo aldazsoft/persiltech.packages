@@ -19,18 +19,24 @@ internal static class ResetPasswordValidation
     /// <param name="password">Lo que escribió la persona.</param>
     /// <param name="confirmation">Lo que escribió la segunda vez.</param>
     /// <returns>
-    /// El motivo por el que no se puede enviar, o <see langword="null"/> si todo está en orden.
+    /// El motivo por el que no se puede enviar, bajo la clave del campo al que acusa, o
+    /// <see langword="null"/> si todo está en orden.
     /// </returns>
-    internal static string? Validate(string? password, string? confirmation)
+    /// <remarks>
+    /// Devuelve la misma forma que <c>ValidationProblemDetails</c> —la clave nombra el campo—
+    /// para que el aviso se pinte bajo su campo por la misma vía que los del servidor. Quien
+    /// lee el formulario no tiene por qué notar cuál de los dos lo generó.
+    /// </remarks>
+    internal static IReadOnlyDictionary<string, string[]>? Validate(string? password, string? confirmation)
     {
         if (string.IsNullOrWhiteSpace(password))
         {
-            return "Escribe la contraseña nueva.";
+            return Fail(NewPasswordKey, "Escribe la contraseña nueva.");
         }
 
         if (string.IsNullOrWhiteSpace(confirmation))
         {
-            return "Repite la contraseña para confirmarla.";
+            return Fail(ConfirmPasswordKey, "Repite la contraseña para confirmarla.");
         }
 
         // Ordinal y no cultural: una contraseña es una secuencia de caracteres, no un texto que
@@ -38,8 +44,17 @@ internal static class ResetPasswordValidation
         // contraseñas distintas.
         return string.Equals(password, confirmation, StringComparison.Ordinal)
             ? null
-            : "Las dos contraseñas no coinciden.";
+            : Fail(ConfirmPasswordKey, "Las dos contraseñas no coinciden.");
     }
+
+    /// <summary>Clave del campo de la contraseña nueva, la misma que usa la API.</summary>
+    internal const string NewPasswordKey = "newPassword";
+
+    /// <summary>Clave del campo de la confirmación, que solo existe en el navegador.</summary>
+    internal const string ConfirmPasswordKey = "confirmPassword";
+
+    private static Dictionary<string, string[]> Fail(string field, string message) =>
+        new(StringComparer.Ordinal) { [field] = [message] };
 
     /// <summary>
     /// Si el correo llega del enlace y no debe poder cambiarse.

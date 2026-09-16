@@ -1,34 +1,53 @@
 @namespace Persiltech.Membership.Blazor.Components
 
-<MembershipValidationErrors Errors="Errors" Title="No se pudo entrar" />
+<EditForm Model="Model" OnValidSubmit="SubmitAsync">
+    @* La de cliente resuelve lo que el navegador sabe comprobar solo; ApiValidator trae lo que
+       solo sabe el servidor —que la contraseña no es esa—. Las dos escriben en el mismo sitio,
+       así que el mensaje sale bajo su campo venga de donde venga. *@
+    <DataAnnotationsValidator />
+    <ApiValidator @ref="Validator" UnmatchedChanged="OnUnmatchedChanged" />
 
-<MudTextField @bind-Value="Email"
-              Label="Correo"
-              InputType="InputType.Email"
-              Margin="@FieldMargin"
-              Disabled="Busy" />
+    @if (Unmatched.Count > 0)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+            @foreach (var message in Unmatched)
+            {
+                <MudText Typo="Typo.body2">@message</MudText>
+            }
+        </MudAlert>
+    }
 
-<MudTextField @bind-Value="Password"
-              Label="Contraseña"
-              InputType="InputType.Password"
-              Margin="@FieldMargin"
-              Disabled="Busy" />
-
-@if (TwoFactorRequired)
-{
-    <MudTextField @bind-Value="TwoFactorCode"
-                  Label="Código del doble factor"
+    <MudTextField For="@(() => Model.Email)"
+                  @bind-Value="Model.Email"
+                  Label="Correo"
+                  InputType="InputType.Email"
                   Margin="@FieldMargin"
                   Disabled="Busy" />
-}
 
-<MudButton Variant="Variant.Filled"
-           Color="Color.Primary"
-           OnClick="SubmitAsync"
-           Disabled="Busy"
-           Class="mt-4">
-    @SubmitLabel
-</MudButton>
+    <MudTextField For="@(() => Model.Password)"
+                  @bind-Value="Model.Password"
+                  Label="Contraseña"
+                  InputType="InputType.Password"
+                  Margin="@FieldMargin"
+                  Disabled="Busy" />
+
+    @if (TwoFactorRequired)
+    {
+        <MudTextField For="@(() => Model.TwoFactorCode)"
+                      @bind-Value="Model.TwoFactorCode"
+                      Label="Código del doble factor"
+                      Margin="@FieldMargin"
+                      Disabled="Busy" />
+    }
+
+    <MudButton ButtonType="ButtonType.Submit"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Disabled="Busy"
+               Class="mt-4">
+        @SubmitLabel
+    </MudButton>
+</EditForm>
 
 @code {
     [Inject] private IMembershipApiClient Api { get; set; } = default!;
@@ -62,30 +81,33 @@
     [Parameter]
     public bool Dense { get; set; }
 
-    private string Email = string.Empty;
-    private string Password = string.Empty;
-    private string TwoFactorCode = string.Empty;
+    private readonly LoginFormModel Model = new();
+
+    private ApiValidator Validator = default!;
+    private IReadOnlyList<string> Unmatched = [];
     private bool Busy;
     private bool TwoFactorRequired;
-    private IReadOnlyDictionary<string, string[]>? Errors;
 
     private Margin FieldMargin => Dense ? Margin.Dense : Margin.Normal;
 
-    protected override void OnInitialized() => Email = InitialEmail ?? string.Empty;
+    protected override void OnInitialized() => Model.Email = InitialEmail;
+
+    private void OnUnmatchedChanged(IReadOnlyList<string> messages) => Unmatched = messages;
 
     private async Task SubmitAsync()
     {
         Busy = true;
-        Errors = null;
 
-        var result = await Api.LoginAsync(
-            new LoginUserRequest(Email, Password, string.IsNullOrWhiteSpace(TwoFactorCode) ? null : TwoFactorCode));
+        var result = await Api.LoginAsync(new LoginUserRequest(
+            Model.Email ?? string.Empty,
+            Model.Password ?? string.Empty,
+            string.IsNullOrWhiteSpace(Model.TwoFactorCode) ? null : Model.TwoFactorCode));
 
         Busy = false;
 
         if (!result.Succeeded || result.Value is null)
         {
-            Errors = result.Errors;
+            Validator.Show(result.Errors);
 
             // El campo del segundo factor solo aparece cuando la API lo pide. Mostrarlo
             // siempre invitaría a rellenarlo a quien no lo tiene activado.

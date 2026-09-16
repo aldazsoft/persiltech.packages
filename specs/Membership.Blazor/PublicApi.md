@@ -99,9 +99,8 @@ pantallas.
 
 ## Los formularios
 
-Todos son `sealed`, viven en `Components/` y comparten forma: pintan sus campos con MudBlazor,
-llaman al cliente, muestran los errores por campo que devuelva la API y avisan por su
-`EventCallback`.
+Todos son `sealed`, viven en `Components/` y comparten forma: un `EditForm` sobre un modelo
+interno, campos de MudBlazor con `For`, la llamada al cliente y el aviso por su `EventCallback`.
 
 | Componente                       | Qué hace                                        | Aviso                                  |
 | -------------------------------- | ----------------------------------------------- | -------------------------------------- |
@@ -109,7 +108,25 @@ llaman al cliente, muestran los errores por campo que devuelva la API y avisan p
 | `MembershipRegisterForm`         | Crea una cuenta.                                | `OnRegistered` (`string`, el correo)   |
 | `MembershipForgotPasswordForm`   | Pide el correo de reinicio.                     | `OnRequested` (`string`, el correo)    |
 | `MembershipResetPasswordForm`    | Fija la contraseña con el testigo recibido.     | `OnReset`                              |
-| `MembershipValidationErrors`     | Pinta los errores de un `ApiResult<T>`.         | —                                      |
+
+## Dónde aterrizan los errores
+
+Cada formulario lleva un `DataAnnotationsValidator` y un `ApiValidator`, de
+`Persiltech.Validation.Blazor`. Los dos escriben en el mismo `EditContext`, así que el mensaje
+se pinta bajo su campo venga del navegador o del servidor.
+
+El modelo de cada formulario es `internal` y sus propiedades **se llaman como las claves que
+serializa la API** —`email`, `password`, `twoFactorCode`, `firstName`, `lastName`,
+`newPassword`—: ese emparejamiento es lo que lleva cada error a su campo. Renombrar una
+propiedad sin renombrar la clave deja su mensaje sin sitio donde pintarse.
+
+Lo que no pertenece a ningún campo sale en un aviso encima del formulario. Ahí cae el error
+general, y en `MembershipResetPasswordForm` también el del testigo caducado o inválido, que no
+tiene campo porque el testigo no se muestra.
+
+`ConfirmPassword` solo existe en el navegador: el servidor recibe una sola contraseña. Su aviso
+lo produce `ResetPasswordValidation` con la misma forma que `ValidationProblemDetails` y entra
+por `ApiValidator.Show`, de modo que aterriza bajo su campo como cualquier otro.
 
 Parámetros comunes a los cuatro formularios:
 

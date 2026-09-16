@@ -1,36 +1,56 @@
 @namespace Persiltech.Membership.Blazor.Components
 
-<MembershipValidationErrors Errors="Errors" Title="No se pudo crear la cuenta" />
+<EditForm Model="Model" OnValidSubmit="SubmitAsync">
+    <DataAnnotationsValidator />
+    <ApiValidator @ref="Validator" UnmatchedChanged="OnUnmatchedChanged" />
 
-<MudTextField @bind-Value="Email"
-              Label="Correo"
-              InputType="InputType.Email"
-              Margin="@FieldMargin"
-              Disabled="Busy" />
+    @if (Unmatched.Count > 0)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+            @foreach (var message in Unmatched)
+            {
+                <MudText Typo="Typo.body2">@message</MudText>
+            }
+        </MudAlert>
+    }
 
-<MudTextField @bind-Value="Password"
-              Label="Contraseña"
-              InputType="InputType.Password"
-              Margin="@FieldMargin"
-              Disabled="Busy" />
+    <MudTextField For="@(() => Model.Email)"
+                  @bind-Value="Model.Email"
+                  Label="Correo"
+                  InputType="InputType.Email"
+                  Margin="@FieldMargin"
+                  Disabled="Busy" />
 
-<MudTextField @bind-Value="FirstName"
-              Label="Nombre"
-              Margin="@FieldMargin"
-              Disabled="Busy" />
+    @* La fortaleza de la contraseña la fija la política de Identity del consumidor, que este
+       paquete no conoce, así que no se comprueba aquí: la hace cumplir el servidor y su
+       mensaje llega a este mismo campo. *@
+    <MudTextField For="@(() => Model.Password)"
+                  @bind-Value="Model.Password"
+                  Label="Contraseña"
+                  InputType="InputType.Password"
+                  Margin="@FieldMargin"
+                  Disabled="Busy" />
 
-<MudTextField @bind-Value="LastName"
-              Label="Apellidos"
-              Margin="@FieldMargin"
-              Disabled="Busy" />
+    <MudTextField For="@(() => Model.FirstName)"
+                  @bind-Value="Model.FirstName"
+                  Label="Nombre"
+                  Margin="@FieldMargin"
+                  Disabled="Busy" />
 
-<MudButton Variant="Variant.Filled"
-           Color="Color.Primary"
-           OnClick="SubmitAsync"
-           Disabled="Busy"
-           Class="mt-4">
-    @SubmitLabel
-</MudButton>
+    <MudTextField For="@(() => Model.LastName)"
+                  @bind-Value="Model.LastName"
+                  Label="Apellidos"
+                  Margin="@FieldMargin"
+                  Disabled="Busy" />
+
+    <MudButton ButtonType="ButtonType.Submit"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Disabled="Busy"
+               Class="mt-4">
+        @SubmitLabel
+    </MudButton>
+</EditForm>
 
 @code {
     [Inject] private IMembershipApiClient Api { get; set; } = default!;
@@ -57,31 +77,35 @@
     [Parameter]
     public bool Dense { get; set; }
 
-    private string Email = string.Empty;
-    private string Password = string.Empty;
-    private string FirstName = string.Empty;
-    private string LastName = string.Empty;
+    private readonly RegisterFormModel Model = new();
+
+    private ApiValidator Validator = default!;
+    private IReadOnlyList<string> Unmatched = [];
     private bool Busy;
-    private IReadOnlyDictionary<string, string[]>? Errors;
 
     private Margin FieldMargin => Dense ? Margin.Dense : Margin.Normal;
+
+    private void OnUnmatchedChanged(IReadOnlyList<string> messages) => Unmatched = messages;
 
     private async Task SubmitAsync()
     {
         Busy = true;
-        Errors = null;
 
-        var result = await Api.RegisterAsync(new RegisterUserRequest(Email, Password, FirstName, LastName));
+        var result = await Api.RegisterAsync(new RegisterUserRequest(
+            Model.Email ?? string.Empty,
+            Model.Password ?? string.Empty,
+            Model.FirstName ?? string.Empty,
+            Model.LastName ?? string.Empty));
 
         Busy = false;
 
         if (!result.Succeeded)
         {
-            Errors = result.Errors;
+            Validator.Show(result.Errors);
 
             return;
         }
 
-        await OnRegistered.InvokeAsync(Email);
+        await OnRegistered.InvokeAsync(Model.Email ?? string.Empty);
     }
 }

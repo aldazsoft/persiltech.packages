@@ -8,12 +8,23 @@
     <!-- Preliberacion: el identificador ya lo ocupaba el paquete del monorepo viejo, que
          llego a 1.0.1. Este es su sucesor y sustituye la API entera, de ahi el mayor; el
          sufijo dice que la superficie todavia se mueve. -->
-    <VersionSuffix>preview.3</VersionSuffix>
+    <VersionSuffix>preview.4</VersionSuffix>
     <PackageTags>dotnet;csharp;blazor;webassembly;mudblazor;membership;identity;jwt;authentication</PackageTags>
     <Authors>Edinson Aldaz</Authors>
     <Company>Persiltech</Company>
     <Product>Persiltech.Membership.Blazor</Product>
     <Copyright>Copyright © 2026 Persiltech</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReleaseNotes>
+      v2.0.0-preview.4
+      - Los cuatro formularios pasan a EditForm y muestran cada error de la API bajo el campo que lo provocó, con Persiltech.Validation.Blazor
+      - Desaparece MembershipValidationErrors: ya no hay un cartel que reúna los errores de todos los campos
+      - El aviso de que las dos contraseñas no coinciden sale bajo su campo, no en un cartel aparte
+      - Los campos obligatorios y el formato del correo se comprueban en el navegador, sin ir al servidor
+      - Los botones envían el formulario, así que la tecla Intro funciona
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -48,6 +59,14 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="MudBlazor" />
+  </ItemGroup>
+
+  <!-- El vecino que lleva los errores de la API al campo que los provocó. Va por
+       ProjectReference y no por PackageReference: dentro del monorepo el proyecto de al lado es
+       la fuente de verdad, y es 'dotnet pack' quien lo traduce a dependencia NuGet tomando su
+       <VersionPrefix>. Esto baja este paquete al nivel 2 del orden de publicación. -->
+  <ItemGroup>
+    <ProjectReference Include="../Persiltech.Validation.Blazor/Persiltech.Validation.Blazor.csproj" />
   </ItemGroup>
 
   <ItemGroup>
