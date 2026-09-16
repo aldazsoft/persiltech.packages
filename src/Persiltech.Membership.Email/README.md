@@ -69,11 +69,21 @@ public sealed class MembershipEmailOptions
 
     public string? LogoUrl { get; set; }                       // si se indica, absoluta
     public string PrimaryColor { get; set; } = "#0d6efd";      // #rgb o #rrggbb
+    public string OnPrimaryColor { get; set; } = "#ffffff";    // el texto que va encima
+    public string Language { get; set; } = "es";               // etiqueta BCP 47
     public string? SupportEmail { get; set; }
 
     public string? TemplatesDirectory { get; set; }            // si se indica, tiene que existir
 }
 ```
+
+`OnPrimaryColor` es el color del rótulo del encabezado y del texto del botón. Existe porque el
+blanco no siempre vale: **sobre una marca clara** —un amarillo, un verde lima— el botón deja de
+leerse, y el paquete no puede elegirlo sin conocer la marca.
+
+`Language` va al atributo `lang` del documento. No traduce nada —el texto vive en las
+plantillas— pero sin él una aplicación que las traduzca seguiría anunciando español, y un lector
+de pantalla lo pronunciaría así.
 
 `ClientBaseUrl` es la raíz de la aplicación **cliente** —la que abre el usuario—, no la de la
 API, y de ella cuelgan las tres rutas.
@@ -122,6 +132,35 @@ Basta con dejar ahí el que se quiera cambiar —`Layout.html` para rebrandear e
 `.html` de un aviso suelto—; el resto siguen saliendo del paquete. Las plantillas se leen una
 vez y se cachean, así que un cambio en disco exige reiniciar la aplicación.
 
+Para la mayoría de los casos **no hace falta llegar ahí**: el logotipo, los dos colores, el
+idioma y el correo de contacto son configuración. Sustituir plantillas es para cambiar el texto
+—traducirlo, por ejemplo— o la maqueta.
+
+### Qué hay detrás del diseño
+
+Un correo no es una página web: se abre en decenas de clientes que interpretan el HTML de forma
+distinta, y varios llevan veinte años sin cambiar. Estas plantillas dan por sentado eso, y
+conviene saberlo antes de tocarlas:
+
+- **El botón va por duplicado.** Outlook de escritorio usa el motor de Word, que no entiende
+  `border-radius` ni el relleno de un `inline-block`: sin la variante VML de dentro del
+  condicional `<!--[if mso]>`, el botón le sale como texto suelto. El resto de clientes ven el
+  enlace normal.
+- **Modo oscuro.** Se declaran ambos esquemas y la maqueta trae su paleta oscura. Sin eso,
+  Apple Mail y Outlook.com invierten el fondo por su cuenta y dejan el texto oscuro sobre fondo
+  oscuro.
+- **Todo el estilo va en línea.** Gmail descarta el `<style>` en varios contextos; el bloque
+  solo lleva lo que mejora la experiencia y cuya ausencia no rompe nada —las medias consultas—.
+- **En móvil el botón ocupa el ancho** y mide 48 px de alto, por encima del mínimo táctil
+  recomendado, y el cuerpo va a 16 px.
+- **Cada aviso trae su versión en texto plano.** No es un adorno: hay clientes y filtros que la
+  prefieren, y un transaccional sin ella puntúa peor en entrega.
+- **Ninguna imagen es imprescindible.** Muchos clientes las bloquean por defecto, así que el
+  mensaje se entiende entero sin cargar ninguna; el logotipo es opcional y lleva `alt`.
+
+Si sustituyes `Layout.html` o el `.html` de un aviso, **estas propiedades se pierden salvo que
+las mantengas**. Lo más fácil es partir del archivo del paquete y editarlo.
+
 ### Marcadores
 
 La sintaxis es `{{Nombre}}`. Un marcador que no corresponda a ningún valor lanza
@@ -133,11 +172,18 @@ fallar en el primer envío de prueba, no llegar en blanco al buzón de un client
 | `FirstName`, `LastName`, `FullName`         | El aviso.                                                            |
 | `Email`                                     | Destinatario del aviso.                                              |
 | `ActionUrl`                                 | Enlace de vuelta, ya construido.                                     |
-| `BrandName`, `PrimaryColor`, `SupportEmail` | Las opciones.                                                        |
+| `LockoutMinutes`                            | Solo en `AccountLocked`: minutos que dura el bloqueo.                |
+| `BrandName`, `PrimaryColor`, `OnPrimaryColor`, `Language`, `SupportEmail` | Las opciones.                          |
 | `BrandHeader`                               | El logotipo como `<img>` si hay `LogoUrl`; si no, la marca en texto. |
+| `SupportLine`                               | El contacto del pie ya maquetado, o **nada** si no hay `SupportEmail`. |
+| `SupportLineText`                           | Lo mismo para la versión en texto plano.                             |
 | `Year`                                      | Año en curso, para el pie.                                           |
 | `Preheader`                                 | El asunto ya sustituido.                                             |
 | `Body`                                      | Solo en `Layout.html`: el interior del aviso.                        |
+
+`SupportLine` y `SupportLineText` existen porque `SupportEmail` es opcional y el compositor no
+tiene condicionales: escribiendo el separador y el `mailto:` directamente en la plantilla, un
+despliegue sin correo de contacto acababa con un `·` colgando y un enlace vacío.
 
 En el `.html` los valores se insertan codificados —solo lo sensible en HTML: los acentos
 viajan tal cual—; en el `.txt` y en el asunto, crudos. `Body` y `BrandHeader` son las dos
@@ -186,7 +232,7 @@ El código fuente vive en el [monorepo](https://github.com/aldazsoft/persiltech.
 
 | Versión | Cambios                                                                                     |
 | ------- | ------------------------------------------------------------------------------------------- |
-| 0.3.0   | Nueva plantilla `AccountLocked`, para el aviso de bloqueo de cuenta que estrena `Persiltech.Membership` 0.9.0. Es la única sin enlace de vuelta: no lleva testigo, así que no hay pantalla a la que dirigir a nadie. Dispone de `{{LockoutMinutes}}` y dice cuánto dura el bloqueo en lugar de a qué hora termina, para no depender de la zona horaria de quien lo lee. |
+| 0.3.0   | Nueva plantilla `AccountLocked`, para el aviso de bloqueo de cuenta que estrena `Persiltech.Membership` 0.9.0. Es la única sin enlace de vuelta: no lleva testigo, así que no hay pantalla a la que dirigir a nadie. Dispone de `{{LockoutMinutes}}` y dice cuánto dura el bloqueo en lugar de a qué hora termina, para no depender de la zona horaria de quien lo lee.<br><br>**Rediseño de las cuatro plantillas.** El botón gana su variante VML para Outlook de escritorio, donde salía como texto suelto. Los mensajes dejan de quedar ilegibles en modo oscuro. En móvil el botón ocupa el ancho y mide 48 px de alto, y el cuerpo sube a 16 px. Se corrige el pie cuando no hay `SupportEmail`: escribía un separador colgando y un `mailto:` vacío. Dos opciones nuevas, `OnPrimaryColor` —el blanco no se lee sobre una marca clara— y `Language` —el idioma estaba fijado a español dentro de la maqueta—, y cuatro marcadores nuevos para quien sustituya plantillas. |
 | 0.2.0   | `ClientBaseUrls`: una dirección de vuelta por portal, elegida con la cabecera `clientId` que envía el frontal. Con una sola dirección, quien pedía su contraseña desde el portal de clientes recibía un enlace hacia el administrativo. La clave solo elige entre lo configurado; una desconocida cae en `ClientBaseUrl`. |
 | 0.1.0   | Primera versión: implementa `IMembershipEmailSender` con plantillas HTML embebidas y sustituibles, la marca y las rutas del cliente como configuración, y la entrega por `IEmailSender`. |
 

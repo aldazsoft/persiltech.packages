@@ -36,6 +36,8 @@ consumidor rellena con el delegado `Action<MembershipEmailOptions>` de `AddMembe
 | `string EmailChangePath { get; set; }`       | Ruta de la pantalla que confirma el cambio de correo. Por defecto `/confirm-email-change`. No puede quedar vacía. |
 | `string? LogoUrl { get; set; }`              | Logotipo del encabezado. Opcional; si se indica, URL absoluta. Sin él se rotula la marca como texto. |
 | `string PrimaryColor { get; set; }`          | Color del encabezado y del botón, en hexadecimal (`#rgb` o `#rrggbb`). Por defecto `#0d6efd`.   |
+| `string OnPrimaryColor { get; set; }`        | Color del texto que va encima del anterior. Por defecto `#ffffff`. El blanco no se lee sobre una marca clara, y el paquete no puede elegirlo sin conocerla. |
+| `string Language { get; set; }`              | Etiqueta BCP 47 para el atributo `lang` del documento. Por defecto `es`. No traduce nada: el texto vive en las plantillas. |
 | `string? SupportEmail { get; set; }`         | Correo de contacto del pie. Opcional; si se indica, tiene que ser una dirección válida.         |
 | `string? TemplatesDirectory { get; set; }`   | Directorio en disco cuyas plantillas ganan a las embebidas, por nombre de archivo. Si se indica, tiene que existir. |
 
@@ -143,11 +145,19 @@ cliente.
 | `FirstName`, `LastName`, `FullName`         | El aviso.                                                          |
 | `Email`                                     | Destinatario del aviso.                                            |
 | `ActionUrl`                                 | Enlace de vuelta a la aplicación cliente, ya construido.           |
-| `BrandName`, `PrimaryColor`, `SupportEmail` | Las opciones.                                                      |
+| `LockoutMinutes`                            | Solo en `AccountLocked`: minutos que dura el bloqueo.              |
+| `BrandName`, `PrimaryColor`, `OnPrimaryColor`, `Language`, `SupportEmail` | Las opciones.                         |
 | `BrandHeader`                               | El logotipo como `<img>` si hay `LogoUrl`; si no, la marca en texto. |
+| `SupportLine`                               | El contacto del pie ya maquetado, o cadena vacía sin `SupportEmail`. |
+| `SupportLineText`                           | Lo mismo en texto plano, para los `.txt`.                          |
 | `Year`                                      | Año en curso, para el pie.                                         |
 | `Preheader`                                 | El asunto ya sustituido.                                           |
 | `Body`                                      | Solo en `Layout.html`: el interior del aviso.                      |
+
+`SupportLine` y `SupportLineText` los compone el compositor porque `SupportEmail` es opcional y
+la sustitución de marcadores no tiene condicionales: escribiendo el separador y el `mailto:` en
+la plantilla, un despliegue sin contacto configurado emitía markup roto —un separador colgando
+y un enlace vacío—. `SupportLine` se inserta **sin codificar**, como `Body` y `BrandHeader`.
 
 **En el `.html`, los valores se insertan codificados como HTML**; en el `.txt` y en el
 asunto, crudos. `Body` y `BrandHeader` son las dos excepciones: son marcado que genera el

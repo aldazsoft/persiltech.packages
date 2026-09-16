@@ -81,6 +81,28 @@ public sealed class MembershipEmailOptions
     public string PrimaryColor { get; set; } = "#0d6efd";
 
     /// <summary>
+    /// Color del texto sobre <see cref="PrimaryColor"/>, en hexadecimal. Por defecto, blanco.
+    /// </summary>
+    /// <remarks>
+    /// Existe porque el blanco no siempre vale: sobre una marca clara —un amarillo, un verde
+    /// lima— el rótulo del botón y el del encabezado se vuelven ilegibles, y el paquete no
+    /// puede elegir por el consumidor sin conocer su marca.
+    /// </remarks>
+    public string OnPrimaryColor { get; set; } = "#ffffff";
+
+    /// <summary>
+    /// Idioma de los mensajes, como etiqueta BCP 47 (<c>es</c>, <c>es-PE</c>, <c>en-US</c>).
+    /// Por defecto, <c>es</c>.
+    /// </summary>
+    /// <remarks>
+    /// Va al atributo <c>lang</c> del documento. No traduce nada —el texto vive en las
+    /// plantillas, y cambiarlo es sustituirlas con <see cref="TemplatesDirectory"/>— pero sin
+    /// esto una aplicación que las traduzca al inglés seguiría anunciando español, y los
+    /// lectores de pantalla lo pronunciarían como tal.
+    /// </remarks>
+    public string Language { get; set; } = "es";
+
+    /// <summary>
     /// Correo de contacto que se ofrece en el pie. Opcional.
     /// </summary>
     public string? SupportEmail { get; set; }

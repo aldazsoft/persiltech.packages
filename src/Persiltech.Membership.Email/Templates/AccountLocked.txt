@@ -4,12 +4,15 @@ Hemos bloqueado el acceso a {{Email}} en {{BrandName}} durante {{LockoutMinutes}
 después de varios intentos fallidos de entrar. Pasado ese tiempo podrás intentarlo de nuevo
 con normalidad.
 
-Si has sido tú, no tienes que hacer nada: espera y vuelve a entrar.
+SI HAS SIDO TÚ
+No tienes que hacer nada: espera y vuelve a entrar.
 
-Si NO has sido tú, alguien está probando contraseñas contra tu cuenta. Cuando el bloqueo
-termine, entra y cambia tu contraseña por una que no uses en ningún otro sitio. Si no
-recuerdas la actual, usa la opción de contraseña olvidada desde la pantalla de acceso.
+SI NO HAS SIDO TÚ
+Alguien está probando contraseñas contra tu cuenta. Cuando el bloqueo termine, entra y
+cambia tu contraseña por una que no uses en ningún otro sitio. Si no recuerdas la actual,
+usa la opción de contraseña olvidada desde la pantalla de acceso.
+
+Por tu seguridad, este aviso no incluye ningún enlace de acceso ni de cambio de contraseña.
 
 --
-Este es un mensaje automático de {{BrandName}}. No respondas a esta dirección.
-{{SupportEmail}}
+Este es un mensaje automático de {{BrandName}}. No hace falta responder.{{SupportLineText}}

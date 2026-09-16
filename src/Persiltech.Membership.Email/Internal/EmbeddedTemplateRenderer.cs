@@ -27,7 +27,8 @@ internal sealed partial class EmbeddedTemplateRenderer(IOptions<MembershipEmailO
     private static readonly HashSet<string> RawHtmlKeys = new(StringComparer.Ordinal)
     {
         "Body",
-        "BrandHeader"
+        "BrandHeader",
+        "SupportLine"
     };
 
     private readonly ConcurrentDictionary<string, string> TemplateCache = new(StringComparer.Ordinal);
@@ -66,7 +67,11 @@ internal sealed partial class EmbeddedTemplateRenderer(IOptions<MembershipEmailO
             ["BrandName"] = emailOptions.BrandName,
             ["BrandHeader"] = BuildBrandHeader(emailOptions),
             ["PrimaryColor"] = emailOptions.PrimaryColor,
+            ["OnPrimaryColor"] = emailOptions.OnPrimaryColor,
+            ["Language"] = emailOptions.Language,
             ["SupportEmail"] = emailOptions.SupportEmail,
+            ["SupportLine"] = BuildSupportLine(emailOptions),
+            ["SupportLineText"] = BuildSupportLineText(emailOptions),
             ["Year"] = DateTime.UtcNow.Year.ToString(CultureInfo.InvariantCulture)
         };
 
@@ -83,9 +88,40 @@ internal sealed partial class EmbeddedTemplateRenderer(IOptions<MembershipEmailO
         var brandName = Encoder.Encode(emailOptions.BrandName);
 
         return string.IsNullOrWhiteSpace(emailOptions.LogoUrl)
-            ? $"""<span style="font:bold 20px Arial,sans-serif;color:#ffffff;">{brandName}</span>"""
-            : $"""<img src="{Encoder.Encode(emailOptions.LogoUrl)}" alt="{brandName}" height="32" style="display:block;border:0;">""";
+            ? $"""<span style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;line-height:1.3;color:{Encoder.Encode(emailOptions.OnPrimaryColor)};">{brandName}</span>"""
+            : $"""<img src="{Encoder.Encode(emailOptions.LogoUrl)}" alt="{brandName}" height="32" style="display:block;border:0;max-height:32px;width:auto;">""";
     }
+
+    /// <summary>
+    /// La parte del pie que ofrece el correo de contacto, o nada si no hay ninguno.
+    /// </summary>
+    /// <remarks>
+    /// <c>SupportEmail</c> es opcional, y sin esto el pie mostraba un separador colgando y un
+    /// enlace <c>mailto:</c> vacío: markup roto en todo despliegue que no lo configurase. El
+    /// compositor no tiene condicionales, así que la decisión se toma aquí.
+    /// </remarks>
+    private static string BuildSupportLine(MembershipEmailOptions emailOptions)
+    {
+        if (string.IsNullOrWhiteSpace(emailOptions.SupportEmail))
+        {
+            return string.Empty;
+        }
+
+        var address = Encoder.Encode(emailOptions.SupportEmail);
+
+        return $""" &middot; <a href="mailto:{address}" style="color:#5b6470;text-decoration:underline;">{address}</a>""";
+    }
+
+    /// <summary>
+    /// Lo mismo para la parte en texto plano, donde el markup no vale.
+    /// </summary>
+    /// <remarks>
+    /// Sin codificar, porque la versión en texto se compone con las sustituciones en crudo.
+    /// </remarks>
+    private static string BuildSupportLineText(MembershipEmailOptions emailOptions) =>
+        string.IsNullOrWhiteSpace(emailOptions.SupportEmail)
+            ? string.Empty
+            : $"{Environment.NewLine}¿Necesitas ayuda? Escríbenos a {emailOptions.SupportEmail}";
 
     private static string Substitute(
         string template,

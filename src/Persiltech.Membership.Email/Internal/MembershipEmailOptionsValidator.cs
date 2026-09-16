@@ -36,6 +36,21 @@ internal sealed partial class MembershipEmailOptionsValidator : IValidateOptions
                 $"PrimaryColor tiene que ser un color hexadecimal (#rgb o #rrggbb), y es '{options.PrimaryColor}'.");
         }
 
+        if (!ColorPattern().IsMatch(options.OnPrimaryColor))
+        {
+            failures.Add(
+                $"OnPrimaryColor tiene que ser un color hexadecimal (#rgb o #rrggbb), y es '{options.OnPrimaryColor}'.");
+        }
+
+        // Basta con la forma: una etiqueta inventada la ignora el lector de pantalla, pero una
+        // con comillas o con '<' se coleria en el atributo lang del documento.
+        if (!LanguagePattern().IsMatch(options.Language))
+        {
+            failures.Add(
+                "Language tiene que ser una etiqueta BCP 47 como 'es', 'es-PE' o 'en-US', " +
+                $"y es '{options.Language}'.");
+        }
+
         if (!string.IsNullOrWhiteSpace(options.SupportEmail) &&
             !MailAddress.TryCreate(options.SupportEmail, out _))
         {
@@ -56,6 +71,9 @@ internal sealed partial class MembershipEmailOptionsValidator : IValidateOptions
 
     [GeneratedRegex("^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")]
     private static partial Regex ColorPattern();
+
+    [GeneratedRegex("^[a-zA-Z]{2,8}(?:-[a-zA-Z0-9]{2,8})*$")]
+    private static partial Regex LanguagePattern();
 
     private static void ValidateAbsoluteUrl(List<string> failures, string memberName, string? value, bool isRequired)
     {

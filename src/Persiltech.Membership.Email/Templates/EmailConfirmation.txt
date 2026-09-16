@@ -1,10 +1,12 @@
 Hola, {{FirstName}}:
 
-Ya casi está. Confirma que {{Email}} es tu correo para terminar de activar tu cuenta en
-{{BrandName}}:
+Ya casi está. Confirma que {{Email}} es tu correo para terminar de activar tu cuenta
+en {{BrandName}}. Abre esta dirección en tu navegador:
 
 {{ActionUrl}}
 
+Si no has creado ninguna cuenta, ignora este mensaje: sin confirmar el correo, la cuenta
+no llega a activarse.
+
 --
-Este es un mensaje automático de {{BrandName}}. Si no esperabas recibirlo, puedes ignorarlo.
-{{SupportEmail}}
+Este es un mensaje automático de {{BrandName}}. No hace falta responder.{{SupportLineText}}

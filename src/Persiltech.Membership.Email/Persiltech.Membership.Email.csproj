@@ -31,6 +31,14 @@
       - Dice cuantos minutos dura el bloqueo, en lugar de a que hora termina, para no depender de la zona horaria de quien lee
       - Como los demas, se puede sustituir por archivo con MembershipEmailOptions.TemplatesDirectory
 
+      - Rediseno de las cuatro plantillas. El boton gana su version VML para Outlook de escritorio, que usa el motor de Word y lo dejaba como texto suelto
+      - Modo oscuro: los mensajes ya no quedan con texto oscuro sobre fondo oscuro en Apple Mail ni en Outlook.com
+      - En movil el boton ocupa el ancho y mide 48 px de alto, por encima del minimo tactil; el cuerpo sube a 16 px
+      - Se corrige el pie cuando SupportEmail no esta configurado: antes escribia un separador colgando y un enlace mailto: vacio
+      - Nueva opcion OnPrimaryColor: el blanco sobre una marca clara no se lee, y el paquete no puede elegirlo sin conocerla
+      - Nueva opcion Language: el idioma del documento estaba fijado a espanol dentro de la maqueta
+      - Nuevos marcadores para quien sustituya las plantillas: OnPrimaryColor, Language, SupportLine y SupportLineText
+
       v0.1.0
       - Primera versión: implementa IMembershipEmailSender de Persiltech.Membership con plantillas HTML
       - La marca, los colores y las rutas del cliente son configuración, no código

@@ -35,6 +35,15 @@ public sealed class EmbeddedTemplateRendererTests : IDisposable
         Assert.Contains(DateTime.UtcNow.Year.ToString(), rendered.HtmlBody, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// El asunto se reutiliza como adelanto, el texto que el cliente enseña junto a él en la
+    /// bandeja.
+    /// </summary>
+    /// <remarks>
+    /// Se comprueba que el asunto esté dentro del bloque oculto, no la forma exacta del
+    /// markup: el adelanto lleva relleno invisible detrás para que no se cuele el principio
+    /// del cuerpo, y fijar la cadena entera haría fallar la prueba a cada retoque de estilo.
+    /// </remarks>
     [Fact]
     public void Render_UsesTheSubjectAsPreheader()
     {
@@ -42,7 +51,14 @@ public sealed class EmbeddedTemplateRendererTests : IDisposable
 
         var rendered = renderer.Render("PasswordReset", CreateValues());
 
-        Assert.Contains($"opacity:0;\">{rendered.Subject}<", rendered.HtmlBody, StringComparison.Ordinal);
+        var inicio = rendered.HtmlBody.IndexOf("opacity:0", StringComparison.Ordinal);
+
+        Assert.True(inicio >= 0, "No hay ningún bloque oculto que haga de adelanto.");
+
+        var fin = rendered.HtmlBody.IndexOf("</div>", inicio, StringComparison.Ordinal);
+        var adelanto = rendered.HtmlBody[inicio..fin];
+
+        Assert.Contains(rendered.Subject, adelanto, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -174,6 +190,98 @@ public sealed class EmbeddedTemplateRendererTests : IDisposable
         Assert.Contains("15", rendered.HtmlBody, StringComparison.Ordinal);
         Assert.DoesNotContain("token=", rendered.HtmlBody, StringComparison.Ordinal);
         Assert.DoesNotContain("token=", rendered.TextBody, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Sin correo de soporte, el pie no deja separadores colgando ni enlaces vacíos.
+    /// </summary>
+    /// <remarks>
+    /// <c>SupportEmail</c> es opcional, y antes el pie escribía siempre el separador y un
+    /// <c>mailto:</c> sin dirección: markup roto en todo despliegue que no lo configurara.
+    /// </remarks>
+    [Fact]
+    public void Render_OmitsTheSupportLineWhenThereIsNoSupportEmail()
+    {
+        var renderer = CreateRenderer();
+
+        var rendered = renderer.Render("PasswordReset", CreateValues());
+
+        Assert.DoesNotContain("mailto:\"", rendered.HtmlBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("&middot;", rendered.HtmlBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("Escríbenos", rendered.TextBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Render_OffersTheSupportEmailWhenThereIsOne()
+    {
+        var renderer = CreateRenderer(options => options.SupportEmail = "soporte@example.com");
+
+        var rendered = renderer.Render("PasswordReset", CreateValues());
+
+        Assert.Contains("mailto:soporte@example.com", rendered.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("soporte@example.com", rendered.TextBody, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// El idioma del documento sale de la configuración.
+    /// </summary>
+    /// <remarks>
+    /// Estaba fijado a español dentro de la maqueta. Una aplicación que traduzca las
+    /// plantillas seguiría anunciando español, y un lector de pantalla las pronunciaría así.
+    /// </remarks>
+    [Fact]
+    public void Render_DeclaresTheConfiguredLanguage()
+    {
+        var renderer = CreateRenderer(options => options.Language = "en-US");
+
+        var rendered = renderer.Render("PasswordReset", CreateValues());
+
+        Assert.Contains("<html lang=\"en-US\"", rendered.HtmlBody, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// El texto sobre el color de marca es configurable.
+    /// </summary>
+    /// <remarks>
+    /// El blanco no vale sobre una marca clara: el rótulo del botón y el del encabezado se
+    /// vuelven ilegibles, y el paquete no puede elegirlo sin conocer la marca.
+    /// </remarks>
+    [Fact]
+    public void Render_UsesTheConfiguredColorOverTheBrandColor()
+    {
+        var renderer = CreateRenderer(options =>
+        {
+            options.PrimaryColor = "#ffe066";
+            options.OnPrimaryColor = "#1f2329";
+        });
+
+        var rendered = renderer.Render("PasswordReset", CreateValues());
+
+        // En el encabezado, que lo compone el propio compositor, y en el botón, que vive en
+        // la plantilla: los dos tienen que respetarlo.
+        Assert.Contains("color:#1f2329;\">Persiltech</span>", rendered.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("color:#1f2329;font-family:Arial", rendered.HtmlBody, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// El botón lleva su versión para Outlook de escritorio.
+    /// </summary>
+    /// <remarks>
+    /// Ese cliente usa el motor de Word, que no entiende <c>border-radius</c> ni el relleno de
+    /// un <c>inline-block</c>: sin la variante VML, el botón aparece como texto suelto.
+    /// </remarks>
+    [Theory]
+    [InlineData("EmailConfirmation")]
+    [InlineData("PasswordReset")]
+    [InlineData("EmailChange")]
+    public void Render_GivesTheButtonAnOutlookFallback(string templateName)
+    {
+        var renderer = CreateRenderer();
+
+        var rendered = renderer.Render(templateName, CreateValues());
+
+        Assert.Contains("v:roundrect", rendered.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("<!--[if mso]>", rendered.HtmlBody, StringComparison.Ordinal);
     }
 
     private static EmbeddedTemplateRenderer CreateRenderer(Action<MembershipEmailOptions>? configureOptions = null)

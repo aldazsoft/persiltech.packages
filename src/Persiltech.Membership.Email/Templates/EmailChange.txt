@@ -1,12 +1,12 @@
 Hola, {{FirstName}}:
 
-Has pedido usar {{Email}} como correo de tu cuenta en {{BrandName}}. Confírmalo desde esta
-dirección para que el cambio surta efecto:
+Has pedido usar {{Email}} como correo de tu cuenta en {{BrandName}}. Confírmalo abriendo
+esta dirección en tu navegador:
 
 {{ActionUrl}}
 
-Hasta que lo confirmes, seguirás entrando con tu correo anterior.
+Hasta que lo confirmes seguirás entrando con tu correo anterior. Si no has pedido este
+cambio, ignora el mensaje y revisa tu contraseña.
 
 --
-Este es un mensaje automático de {{BrandName}}. Si no esperabas recibirlo, puedes ignorarlo.
-{{SupportEmail}}
+Este es un mensaje automático de {{BrandName}}. No hace falta responder.{{SupportLineText}}
