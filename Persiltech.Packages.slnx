@@ -48,7 +48,8 @@
     <Project Path="samples/Persiltech.Localizer.WebApi.Sample/Persiltech.Localizer.WebApi.Sample.csproj" />
     <Project Path="samples/Persiltech.Membership.Email.Sample/Persiltech.Membership.Email.Sample.csproj" />
     <Project Path="samples/Persiltech.Membership.Blazor.Sample/Persiltech.Membership.Blazor.Sample.csproj" />
-    <Project Path="samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj" />
+    <Project Path="samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj" />
+    <Project Path="samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj" />
     <Project Path="samples/Persiltech.Validation.Blazor.Sample/Persiltech.Validation.Blazor.Sample.csproj" />
   </Folder>
 </Solution>

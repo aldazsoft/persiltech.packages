@@ -1,4 +1,4 @@
-namespace Persiltech.Membership.Sample.Configurations;
+namespace Persiltech.Membership.PostgreSql.Sample.Configurations;
 
 internal static class CorsConfiguration
 {

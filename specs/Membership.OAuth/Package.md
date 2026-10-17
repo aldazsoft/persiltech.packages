@@ -7,8 +7,9 @@ tags: dotnet;csharp;aspnetcore;oauth2;openid-connect;openiddict;identity;pkce;mi
 # tests/Persiltech.Membership.Tests, que ya levanta la aplicación entera con el
 # paquete base. Separarlas obligaría a duplicar ese arranque.
 withTests: false
-# El sample también es compartido: samples/Persiltech.Membership.Sample monta los
-# dos paquetes, que es como se consumen.
+# El sample también es compartido: samples/Persiltech.Membership.SqlServer.Sample
+# monta los dos paquetes, que es como se consumen. El de PostgreSQL,
+# samples/Persiltech.Membership.PostgreSql.Sample, hace lo mismo.
 withSample: false
 license: MIT
 iconPath: assets/icon.png

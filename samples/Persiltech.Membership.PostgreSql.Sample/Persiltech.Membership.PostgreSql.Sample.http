@@ -1,0 +1,468 @@
+@HostAddress = https://localhost:7083
+
+### Registrar una cuenta.
+POST {{HostAddress}}/user/register
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "Passw0rd!",
+  "firstName": "Juan",
+  "lastName": "Pérez"
+}
+
+### Autenticar y quedarse con el token.
+# @name login
+POST {{HostAddress}}/user/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Passw0rd!"
+}
+
+### Consumir el token contra una ruta protegida del consumidor.
+GET {{HostAddress}}/user/me
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Renovar la sesión: consume el testigo y devuelve un par nuevo.
+# @name refresh
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
+
+### El token de acceso recién renovado sirve igual.
+GET {{HostAddress}}/user/me
+Authorization: Bearer {{refresh.response.body.$.accessToken}}
+
+### Reutilizar el testigo ya consumido: 401, y además tumba la familia entera.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
+
+### Tras la detección de reutilización, el testigo nuevo tampoco vale: 401.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh.response.body.$.refreshToken}}"
+}
+
+### Cerrar sesión revoca la familia del testigo. Siempre 204.
+# @name logout
+POST {{HostAddress}}/user/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
+
+### Cerrar sesión con un testigo que no existe: 204 también, para no filtrar nada.
+POST {{HostAddress}}/user/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "un-testigo-que-nadie-emitio"
+}
+
+### Testigo desconocido al renovar: 401.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "un-testigo-que-nadie-emitio"
+}
+
+### Testigo ausente: 400 con ValidationProblemDetails.
+POST {{HostAddress}}/user/refresh
+Content-Type: application/json
+
+{
+}
+
+### Credenciales inválidas: 400 con el error en la clave vacía.
+POST {{HostAddress}}/user/login
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "otra-cosa"
+}
+
+### Registro inválido: 400 con las claves en camelCase.
+POST {{HostAddress}}/user/register
+Content-Type: application/json
+
+{
+  "email": "no-es-un-correo",
+  "password": "abc"
+}
+
+### Crear un rol. Requiere token: los endpoints de administración no son anónimos.
+# @name createRole
+POST {{HostAddress}}/roles
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "Administrators"
+}
+
+### Listar los roles, sin paginar.
+GET {{HostAddress}}/roles
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Listar los roles paginados.
+GET {{HostAddress}}/roles/paged?page=1&pageSize=20
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Obtener el rol recién creado.
+GET {{HostAddress}}/roles/{{createRole.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Renombrar el rol.
+PUT {{HostAddress}}/roles/{{createRole.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "Auditors"
+}
+
+### Obtener el usuario del token.
+# @name currentUser
+GET {{HostAddress}}/users/current
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Listar los usuarios paginados, con sus roles.
+GET {{HostAddress}}/users/paged?page=1&pageSize=20
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Fijar los roles del usuario. La lista sustituye a la anterior.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/roles
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "roles": ["Auditors"]
+}
+
+### Un rol inexistente: 400 con la clave roles y sin aplicar ninguno.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/roles
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "roles": ["NoExiste"]
+}
+
+### Desactivar la cuenta. A partir de aquí, su login responde 400.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "isActive": false
+}
+
+### Reactivarla.
+PUT {{HostAddress}}/users/{{currentUser.response.body.$.id}}/status
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "isActive": true
+}
+
+### Eliminar el rol.
+DELETE {{HostAddress}}/roles/{{createRole.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Pedir el reinicio de la contraseña. Siempre 204: el testigo sale en el log.
+POST {{HostAddress}}/password/forgot
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com"
+}
+
+### Un correo sin cuenta recibe exactamente la misma respuesta.
+POST {{HostAddress}}/password/forgot
+Content-Type: application/json
+
+{
+  "email": "no-existe@example.com"
+}
+
+### Reiniciar la contraseña con el testigo del log.
+POST {{HostAddress}}/password/reset
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "token": "pega-aqui-el-testigo-del-log",
+  "newPassword": "OtraPassw0rd!"
+}
+
+### Cambiar la contraseña de la cuenta autenticada.
+POST {{HostAddress}}/password/change
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "currentPassword": "Passw0rd!",
+  "newPassword": "OtraPassw0rd!"
+}
+
+### Reenviar la confirmación del correo. Siempre 204.
+POST {{HostAddress}}/email/confirmation/send
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com"
+}
+
+### Confirmar el correo con el testigo del log.
+POST {{HostAddress}}/email/confirmation
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "token": "pega-aqui-el-testigo-del-log"
+}
+
+### Pedir el cambio de correo. El aviso va al correo nuevo.
+POST {{HostAddress}}/email/change
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "newEmail": "juan.perez.nuevo@example.com"
+}
+
+### Confirmar el cambio. Mueve Email y UserName a la vez.
+POST {{HostAddress}}/email/change/confirm
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "newEmail": "juan.perez.nuevo@example.com",
+  "token": "pega-aqui-el-testigo-del-log"
+}
+
+### Pedir el cambio de teléfono. El código sale por el puerto de SMS.
+POST {{HostAddress}}/phone/change
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "phoneNumber": "+51987654321"
+}
+
+### Confirmar el cambio de teléfono con el código del log.
+POST {{HostAddress}}/phone/change/confirm
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "phoneNumber": "+51987654321",
+  "token": "pega-aqui-el-codigo-del-log"
+}
+
+### Actualizar el perfil de la cuenta autenticada.
+PUT {{HostAddress}}/profile
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "firstName": "Juan Carlos",
+  "lastName": "Pérez"
+}
+
+### Preparar el doble factor: devuelve la clave para la aplicación de autenticación.
+# @name twoFactorSetup
+POST {{HostAddress}}/twofactor/setup
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Activar el doble factor con el código que muestra la aplicación.
+POST {{HostAddress}}/twofactor/enable
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "code": "123456"
+}
+
+### Con el doble factor activo, la autenticación exige el código.
+POST {{HostAddress}}/user/login
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "Passw0rd!",
+  "twoFactorCode": "123456"
+}
+
+### Regenerar los códigos de recuperación.
+POST {{HostAddress}}/twofactor/recovery-codes
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Desactivar el doble factor.
+POST {{HostAddress}}/twofactor/disable
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+# ============================================================================
+# OAuth 2.0 / OpenID Connect — Persiltech.Membership.OAuth
+# ============================================================================
+# El sembrado registra dos clientes, uno de cada tipo:
+#
+#   persiltech-spa      público       sin secreto, Authorization Code + PKCE
+#   persiltech-service  confidencial  con secreto, credenciales de cliente
+#
+# El servidor exige PKCE en el flujo de código y no admite la concesión de
+# contraseña: un cliente que no pueda guardar un secreto tampoco debe pedir las
+# credenciales del usuario.
+
+@publicClient = persiltech-spa
+@confidentialClient = persiltech-service
+@clientSecret = un-secreto-de-cliente-solo-para-el-ejemplo
+
+# Par de PKCE fijo, para que el ejemplo sea reproducible. En un cliente real el
+# verificador se genera al azar en cada intento y no se reutiliza nunca.
+@codeVerifier = persiltech-sample-code-verifier-de-43-caracteres-o-mas
+@codeChallenge = vQwMk5NIFmOAi4nvydquFFaEUQirap1LL50YI1GLXlU
+
+### El documento de descubrimiento: lo que un cliente lee para configurarse solo.
+GET {{HostAddress}}/.well-known/openid-configuration
+
+### Las claves públicas con las que se verifica la firma de los tokens.
+GET {{HostAddress}}/.well-known/jwks
+
+# ---------------------------------------------------------------------------
+# Credenciales de cliente: un servicio pide un token para sí mismo
+# ---------------------------------------------------------------------------
+
+### Un servicio obtiene su token. No hay usuario: el subject es el propio cliente.
+# @name serviceToken
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id={{confidentialClient}}&client_secret={{clientSecret}}&scope=email
+
+### Secreto equivocado: 401 con invalid_client, según el RFC 6749 §5.2.
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id={{confidentialClient}}&client_secret=el-secreto-equivocado&scope=email
+
+### El cliente público no puede usar este flujo: no guarda secreto que probar.
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id={{publicClient}}&scope=email
+
+### Un cliente que no existe recibe la misma respuesta que uno con mal secreto.
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=cliente-que-no-existe&client_secret=cualquiera&scope=email
+
+### La concesión de contraseña no está admitida: 400 con unsupported_grant_type.
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id={{confidentialClient}}&client_secret={{clientSecret}}&username=admin@example.com&password=Passw0rd!
+
+# ---------------------------------------------------------------------------
+# Authorization Code + PKCE: una persona autoriza a una aplicación
+# ---------------------------------------------------------------------------
+# Este flujo necesita un navegador, porque exige una sesión interactiva. Los dos
+# primeros pasos no se pueden ejecutar desde este archivo:
+#
+#   1. Abre en el navegador la URL que imprime la petición de abajo.
+#   2. Entra con admin@example.com / Passw0rd! en la pantalla del consumidor.
+#   3. El servidor te devuelve a /callback, que muestra el código en pantalla.
+#   4. Cópialo en @authorizationCode y ejecuta el canje.
+#
+# El código caduca en minutos y solo sirve una vez: si el canje devuelve
+# invalid_grant, repite desde el paso 1.
+
+### Paso 1. Copia esta URL al navegador (no la ejecutes aquí: redirige a la pantalla de login).
+GET {{HostAddress}}/connect/authorize?client_id={{publicClient}}&response_type=code&redirect_uri=https://localhost:7083/callback&scope=openid%20email%20profile%20roles%20offline_access&code_challenge={{codeChallenge}}&code_challenge_method=S256
+
+### La misma petición sin PKCE: 400. El servidor lo exige y rechaza de plano.
+GET {{HostAddress}}/connect/authorize?client_id={{publicClient}}&response_type=code&redirect_uri=https://localhost:7083/callback&scope=openid%20email
+
+### Una URI de vuelta no registrada se rechaza: es lo que impide que un tercero se lleve el código.
+GET {{HostAddress}}/connect/authorize?client_id={{publicClient}}&response_type=code&redirect_uri=https://atacante.example/callback&scope=openid&code_challenge={{codeChallenge}}&code_challenge_method=S256
+
+@authorizationCode = pega-aqui-el-codigo-que-muestra-callback
+
+### Paso 4. Canjear el código. Devuelve access_token, id_token y refresh_token.
+# @name codeExchange
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&client_id={{publicClient}}&code={{authorizationCode}}&redirect_uri=https://localhost:7083/callback&code_verifier={{codeVerifier}}
+
+# ---------------------------------------------------------------------------
+# Lo que se hace con el token emitido
+# ---------------------------------------------------------------------------
+
+### Las reclamaciones del usuario, a partir del token de acceso del flujo de código.
+GET {{HostAddress}}/connect/userinfo
+Authorization: Bearer {{codeExchange.response.body.$.access_token}}
+
+### Sin token: 401.
+GET {{HostAddress}}/connect/userinfo
+
+### Con un token inventado: 401.
+GET {{HostAddress}}/connect/userinfo
+Authorization: Bearer un-token-inventado
+
+### Renovar la sesión sin volver a pedir credenciales. Requiere el ámbito offline_access.
+# @name refreshed
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&client_id={{publicClient}}&refresh_token={{codeExchange.response.body.$.refresh_token}}
+
+### El token renovado sirve igual que el original.
+GET {{HostAddress}}/connect/userinfo
+Authorization: Bearer {{refreshed.response.body.$.access_token}}
+
+# ---------------------------------------------------------------------------
+# Ataque de repetición: dejar esto para el final no es casual
+# ---------------------------------------------------------------------------
+# Al detectar que un código se canjea dos veces, OpenIddict no se limita a
+# rechazar el segundo intento: revoca toda la cadena de testigos que salió de
+# ese código, incluido el de renovación. Es lo correcto —si alguien más tuvo el
+# código, la sesión está comprometida— pero significa que ejecutar esta petición
+# invalida el refresh_token de arriba. Si luego quieres volver a renovar, repite
+# el flujo desde el paso 1.
+
+### El mismo código, otra vez: 400. Un código de autorización solo se canjea una vez.
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&client_id={{publicClient}}&code={{authorizationCode}}&redirect_uri=https://localhost:7083/callback&code_verifier={{codeVerifier}}
+
+### Con el verificador equivocado: 400. Es lo que PKCE protege — quien intercepte el código no lo tiene.
+POST {{HostAddress}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&client_id={{publicClient}}&code={{authorizationCode}}&redirect_uri=https://localhost:7083/callback&code_verifier=un-verificador-que-no-corresponde-al-desafio
+
+### Cerrar la sesión interactiva. Ábrelo en el navegador: cierra la cookie del consumidor.
+GET {{HostAddress}}/connect/logout
+
+
+### Darse de baja. Borra la cuenta; dejarlo al final del archivo no es casual.
+DELETE {{HostAddress}}/profile
+Authorization: Bearer {{login.response.body.$.accessToken}}

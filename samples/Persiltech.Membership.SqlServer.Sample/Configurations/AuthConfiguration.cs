@@ -1,4 +1,4 @@
-namespace Persiltech.Membership.Sample.Configurations;
+namespace Persiltech.Membership.SqlServer.Sample.Configurations;
 
 internal static class AuthConfiguration
 {

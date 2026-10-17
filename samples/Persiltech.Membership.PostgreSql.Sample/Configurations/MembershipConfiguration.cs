@@ -1,4 +1,4 @@
-namespace Persiltech.Membership.Sample.Configurations;
+namespace Persiltech.Membership.PostgreSql.Sample.Configurations;
 
 internal static class MembershipConfiguration
 {
@@ -7,9 +7,9 @@ internal static class MembershipConfiguration
     {
         builder.Services.AddMembershipServices(
             jwt => builder.Configuration.GetSection("Jwt").Bind(jwt),
-            options => options.UseSqlServer(
+            options => options.UseNpgsql(
                 builder.Configuration.GetConnectionString("Membership"),
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName)));
+                npgsql => npgsql.MigrationsAssembly(typeof(Program).Assembly.FullName)));
 
         return builder;
     }

@@ -1,4 +1,4 @@
-namespace Persiltech.Membership.Sample.Configurations;
+namespace Persiltech.Membership.PostgreSql.Sample.Configurations;
 
 internal static class SeedConfiguration
 {
@@ -27,7 +27,7 @@ internal static class SeedConfiguration
             new MembershipOAuthClient(
                 ClientId: "persiltech-spa",
                 DisplayName: "Aplicación de ejemplo",
-                RedirectUris: ["https://localhost:7082/callback", "https://localhost:7195/oauth/callback"],
+                RedirectUris: ["https://localhost:7083/callback", "https://localhost:7195/oauth/callback"],
                 Scopes: ["openid", "email", "profile", "roles", "offline_access"]),
 
             // Confidencial: guarda un secreto, así que puede pedir un testigo para sí mismo

@@ -8,14 +8,19 @@ Los comandos se ejecutan **desde la raíz del repositorio**, y la herramienta `d
 es local: si aún no está restaurada, `dotnet tool restore` la instala desde
 `.config/dotnet-tools.json`.
 
-El proyecto anfitrión de ambos contextos es `samples/Persiltech.Membership.Sample`, que
-es a la vez el proyecto y el proyecto de arranque, así que no hace falta declarar
-`--startup-project`.
+Hay un proyecto anfitrión por motor. Cada uno es a la vez el proyecto y el proyecto de
+arranque, así que no hace falta declarar `--startup-project`.
 
-> `samples/Persiltech.Membership.Sample` declara **dos** `DbContext`:
-> `MembershipDbContext` y `MembershipOAuthDbContext`. Por eso **`--context` es
-> obligatorio** en todos los comandos: sin él, `dotnet ef` aborta con
-> _"More than one DbContext was found"_.
+- SQL Server: `samples/Persiltech.Membership.SqlServer.Sample`
+- PostgreSQL: `samples/Persiltech.Membership.PostgreSql.Sample`
+
+Los comandos de las dos primeras secciones usan el de SQL Server. Los de PostgreSQL están
+al final: son los mismos, con la ruta del otro proyecto y con el `--output` en otra
+carpeta, para no pisar los scripts que ya están en `deploy/Membership/scripts`.
+
+> Cada anfitrión declara **dos** `DbContext`: `MembershipDbContext` y
+> `MembershipOAuthDbContext`. Por eso **`--context` es obligatorio** en todos los
+> comandos: sin él, `dotnet ef` aborta con _"More than one DbContext was found"_.
 
 ## Persiltech.Membership
 
@@ -26,7 +31,7 @@ viven en `Migrations/`, que es la carpeta por defecto.
 
 ```powershell
 dotnet ef migrations add InitialMembership `
-  --project samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj `
+  --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipDbContext
 ```
 
@@ -37,7 +42,7 @@ modo que el script puede aplicarse sobre una base de datos en cualquier estado.
 
 ```powershell
 dotnet ef migrations script --idempotent `
-  --project samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj `
+  --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipDbContext `
   --output deploy/Membership/scripts/01-initial-membership.sql
 ```
@@ -49,7 +54,7 @@ llega a `0`, que es la base de datos vacía.
 
 ```powershell
 dotnet ef migrations script InitialMembership 0 `
-  --project samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj `
+  --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipDbContext `
   --output deploy/Membership/scripts/rollback/01-initial-membership-rollback.sql
 ```
@@ -64,7 +69,7 @@ Identity; de ahí el `--output-dir` al crearlas.
 
 ```powershell
 dotnet ef migrations add InitialOAuth `
-  --project samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj `
+  --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipOAuthDbContext `
   --output-dir Migrations/MembershipOAuthDb
 ```
@@ -73,7 +78,7 @@ dotnet ef migrations add InitialOAuth `
 
 ```powershell
 dotnet ef migrations script --idempotent `
-  --project samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj `
+  --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipOAuthDbContext `
   --output deploy/Membership/scripts/02-initial-oauth.sql
 ```
@@ -82,7 +87,7 @@ dotnet ef migrations script --idempotent `
 
 ```powershell
 dotnet ef migrations script InitialOAuth 0 `
-  --project samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj `
+  --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipOAuthDbContext `
   --output deploy/Membership/scripts/rollback/02-initial-oauth-rollback.sql
 ```
@@ -96,6 +101,59 @@ da igual. Dentro de cada uno, el rollback se aplica en sentido inverso al despli
 
 ```powershell
 dotnet ef migrations list `
-  --project samples/Persiltech.Membership.Sample/Persiltech.Membership.Sample.csproj `
+  --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipDbContext
+```
+
+## PostgreSQL
+
+Mismos dos contextos, en `samples/Persiltech.Membership.PostgreSql.Sample`. El proveedor
+es Npgsql. Las migraciones de este anfitrión salen del modelo actual: una para Identity,
+que ya incluye `MembershipRefreshTokens`, y otra para OpenIddict.
+
+### Crear migración
+
+```powershell
+dotnet ef migrations add InitialMembership `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipDbContext
+```
+
+```powershell
+dotnet ef migrations add InitialOAuth `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipOAuthDbContext `
+  --output-dir Migrations/MembershipOAuthDb
+```
+
+### Generar el script de migración
+
+```powershell
+dotnet ef migrations script --idempotent `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipDbContext `
+  --output deploy/Membership/scripts/postgresql/01-initial-membership.sql
+```
+
+```powershell
+dotnet ef migrations script --idempotent `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipOAuthDbContext `
+  --output deploy/Membership/scripts/postgresql/02-initial-oauth.sql
+```
+
+### Generar el script de rollback
+
+```powershell
+dotnet ef migrations script InitialMembership 0 `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipDbContext `
+  --output deploy/Membership/scripts/postgresql/rollback/01-initial-membership-rollback.sql
+```
+
+```powershell
+dotnet ef migrations script InitialOAuth 0 `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipOAuthDbContext `
+  --output deploy/Membership/scripts/postgresql/rollback/02-initial-oauth-rollback.sql
 ```

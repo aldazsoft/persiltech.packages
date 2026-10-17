@@ -1,4 +1,4 @@
-namespace Persiltech.Membership.Sample.Configurations;
+namespace Persiltech.Membership.PostgreSql.Sample.Configurations;
 
 /// <summary>
 /// Declara el esquema de seguridad <em>bearer</em> en el documento OpenAPI.

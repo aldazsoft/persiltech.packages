@@ -1,4 +1,4 @@
-namespace Persiltech.Membership.Sample.Senders;
+namespace Persiltech.Membership.SqlServer.Sample.Senders;
 
 /// <summary>
 /// Implementación del puerto de SMS que registra el aviso en el log en lugar de enviarlo.

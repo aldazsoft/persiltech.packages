@@ -1,4 +1,4 @@
-namespace Persiltech.Membership.Sample.Endpoints;
+namespace Persiltech.Membership.PostgreSql.Sample.Endpoints;
 
 internal static class AccountEndpoints
 {
