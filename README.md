@@ -40,11 +40,20 @@ dotnet ef migrations add InitialMembership `
 `--idempotent` envuelve cada paso en una comprobación contra `__EFMigrationsHistory`, de
 modo que el script puede aplicarse sobre una base de datos en cualquier estado.
 
+- Para Sql Server
 ```powershell
 dotnet ef migrations script --idempotent `
   --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipDbContext `
-  --output deploy/Membership/scripts/01-initial-membership.sql
+  --output deploy/Membership/SqlServer/scripts/01-initial-membership.sql
+```
+
+- Para PostgreSQL
+```powershell
+dotnet ef migrations script --idempotent `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipDbContext `
+  --output deploy/Membership/Postgres/scripts/01-initial-membership.sql
 ```
 
 ### Generar el script de rollback
@@ -52,11 +61,20 @@ dotnet ef migrations script --idempotent `
 El comando toma **desde** y **hasta**: se parte de la última migración aplicada y se
 llega a `0`, que es la base de datos vacía.
 
+- Para Sql Server
 ```powershell
 dotnet ef migrations script InitialMembership 0 `
   --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipDbContext `
-  --output deploy/Membership/scripts/rollback/01-initial-membership-rollback.sql
+  --output deploy/Membership/SqlServer/scripts/rollback/01-initial-membership-rollback.sql
+```
+
+- Para PostgreSQL
+```powershell
+dotnet ef migrations script InitialMembership 0 `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipDbContext `
+  --output deploy/Membership/Postgres/scripts/rollback/01-initial-membership-rollback.sql
 ```
 
 ## Persiltech.Membership.OAuth
@@ -76,20 +94,37 @@ dotnet ef migrations add InitialOAuth `
 
 ### Generar el script de migración
 
+- Para Sql Server
 ```powershell
 dotnet ef migrations script --idempotent `
   --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipOAuthDbContext `
-  --output deploy/Membership/scripts/02-initial-oauth.sql
+  --output deploy/Membership/SqlServer/scripts/02-initial-oauth.sql
+```
+
+- Para PostgreSQL
+```powershell
+dotnet ef migrations script --idempotent `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipOAuthDbContext `
+  --output deploy/Membership/Postgres/scripts/02-initial-oauth.sql
 ```
 
 ### Generar el script de rollback
 
+- Para Sql Server
 ```powershell
 dotnet ef migrations script InitialOAuth 0 `
   --project samples/Persiltech.Membership.SqlServer.Sample/Persiltech.Membership.SqlServer.Sample.csproj `
   --context MembershipOAuthDbContext `
-  --output deploy/Membership/scripts/rollback/02-initial-oauth-rollback.sql
+  --output deploy/Membership/SqlServer/scripts/rollback/02-initial-oauth-rollback.sql
+```
+- Para PostgreSQL
+```powershell
+dotnet ef migrations script InitialOAuth 0 `
+  --project samples/Persiltech.Membership.PostgreSql.Sample/Persiltech.Membership.PostgreSql.Sample.csproj `
+  --context MembershipOAuthDbContext `
+  --output deploy/Membership/Postgres/scripts/rollback/02-initial-oauth-rollback.sql
 ```
 
 ## Orden de aplicación
